@@ -22,19 +22,23 @@
     var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
   </script>
 
-  <meta name="description" content="Welcome to Hexo! This is your very first post. Check documentation for more info. If you get any problems when using Hexo, you can find the answer in troubleshooting or you can ask me on GitHub. Quick">
+  <meta name="description" content="一、程序的编译与链接从C源代码到可执行文件的生成过程  编译： 由C语言代码生成汇编代码  汇编： 由汇编代码生成机器码  链接 ：将多个机器码的目标文件链接成一个可执行文件  ​                                           C语言→汇编语言→机器码 二、Linux下的可执行文件格式（1）什么是可执行文件？广义：文件中的数据是可执行文件  例：    .ou">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Hello World">
-<meta property="og:url" content="http://example.com/2024/12/26/hello-world/index.html">
+<meta property="og:title" content="二进制基础">
+<meta property="og:url" content="http://example.com/2025/01/14/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%9F%BA%E7%A1%80/index.html">
 <meta property="og:site_name" content="Hexo">
-<meta property="og:description" content="Welcome to Hexo! This is your very first post. Check documentation for more info. If you get any problems when using Hexo, you can find the answer in troubleshooting or you can ask me on GitHub. Quick">
+<meta property="og:description" content="一、程序的编译与链接从C源代码到可执行文件的生成过程  编译： 由C语言代码生成汇编代码  汇编： 由汇编代码生成机器码  链接 ：将多个机器码的目标文件链接成一个可执行文件  ​                                           C语言→汇编语言→机器码 二、Linux下的可执行文件格式（1）什么是可执行文件？广义：文件中的数据是可执行文件  例：    .ou">
 <meta property="og:locale" content="en_US">
-<meta property="article:published_time" content="2024-12-26T13:20:54.000Z">
-<meta property="article:modified_time" content="2024-12-26T13:20:54.000Z">
+<meta property="og:image" content="http://example.com/2025/01/14/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%9F%BA%E7%A1%80/1.png">
+<meta property="og:image" content="http://example.com/2025/01/14/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%9F%BA%E7%A1%80/2.png">
+<meta property="og:image" content="http://example.com/2025/01/14/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%9F%BA%E7%A1%80/3.png">
+<meta property="article:published_time" content="2025-01-14T07:16:45.000Z">
+<meta property="article:modified_time" content="2025-01-14T07:36:59.841Z">
 <meta property="article:author" content="John Doe">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/2025/01/14/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%9F%BA%E7%A1%80/1.png">
 
-<link rel="canonical" href="http://example.com/2024/12/26/hello-world/">
+<link rel="canonical" href="http://example.com/2025/01/14/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%9F%BA%E7%A1%80/">
 
 
 <script id="page-configurations">
@@ -47,7 +51,7 @@
   };
 </script>
 
-  <title>Hello World | Hexo</title>
+  <title>二进制基础 | Hexo</title>
   
 
 
@@ -162,7 +166,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://example.com/2024/12/26/hello-world/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/01/14/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%9F%BA%E7%A1%80/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -175,7 +179,7 @@
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          Hello World
+          二进制基础
         </h1>
 
         <div class="post-meta">
@@ -184,8 +188,9 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">Posted on</span>
+              
 
-              <time title="Created: 2024-12-26 21:20:54" itemprop="dateCreated datePublished" datetime="2024-12-26T21:20:54+08:00">2024-12-26</time>
+              <time title="Created: 2025-01-14 15:16:45 / Modified: 15:36:59" itemprop="dateCreated datePublished" datetime="2025-01-14T15:16:45+08:00">2025-01-14</time>
             </span>
 
           
@@ -199,19 +204,128 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <p>Welcome to <a target="_blank" rel="noopener" href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a target="_blank" rel="noopener" href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a target="_blank" rel="noopener" href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a target="_blank" rel="noopener" href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/writing.html">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/server.html">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/generating.html">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
+        <h1 id="一、程序的编译与链接"><a href="#一、程序的编译与链接" class="headerlink" title="一、程序的编译与链接"></a>一、程序的编译与链接</h1><p>从C源代码到可执行文件的生成过程 </p>
+<p>编译： 由C语言代码生成汇编代码 </p>
+<p>汇编： 由汇编代码生成机器码 </p>
+<p>链接 ：将多个机器码的目标文件链接成一个可执行文件</p>
+<p><img src="/2025/01/14/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%9F%BA%E7%A1%80/1.png" alt="1"></p>
+<p>​                                           C语言→汇编语言→机器码</p>
+<h1 id="二、Linux下的可执行文件格式"><a href="#二、Linux下的可执行文件格式" class="headerlink" title="二、Linux下的可执行文件格式"></a>二、Linux下的可执行文件格式</h1><h2 id="（1）什么是可执行文件？"><a href="#（1）什么是可执行文件？" class="headerlink" title="（1）什么是可执行文件？"></a>（1）什么是可执行文件？</h2><p>广义：文件中的数据是可执行文件 </p>
+<p>例：</p>
+<table>
+<thead>
+<tr>
+<th>.out</th>
+<th>.exe</th>
+<th>.sh</th>
+<th>.py</th>
+</tr>
+</thead>
+</table>
+<p>狭义：文件中的数据是机器码的文件 </p>
+<p>例：</p>
+<table>
+<thead>
+<tr>
+<th>.out</th>
+<th>.exe</th>
+<th>.dll</th>
+<th>.so</th>
+</tr>
+</thead>
+</table>
+<p>.out .exe .dl .so </p>
+<h2 id="（2）可执行文件的分类"><a href="#（2）可执行文件的分类" class="headerlink" title="（2）可执行文件的分类"></a>（2）可执行文件的分类</h2><p>Windows：PE</p>
+<table>
+<thead>
+<tr>
+<th>可执行程序</th>
+<th>动态链接库</th>
+<th>静态链接库</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>.exe</td>
+<td>.dll</td>
+<td>.lib</td>
+</tr>
+</tbody></table>
+<p>Linux：ELF</p>
+<table>
+<thead>
+<tr>
+<th>可执行程序</th>
+<th>动态链接库</th>
+<th>静态链接库</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>.out</td>
+<td>.so</td>
+<td>.a</td>
+</tr>
+</tbody></table>
+<h2 id="（3）磁盘中的ELF与内存中的ELF"><a href="#（3）磁盘中的ELF与内存中的ELF" class="headerlink" title="（3）磁盘中的ELF与内存中的ELF"></a>（3）磁盘中的ELF与内存中的ELF</h2><p>磁盘中的储存方式：节</p>
+<p>内存中的储存方式：段</p>
+<p><img src="/2025/01/14/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%9F%BA%E7%A1%80/2.png" alt="2"></p>
+<table>
+<thead>
+<tr>
+<th>RW可写 Data段</th>
+<th>RX可读 Code段</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>.data</td>
+<td>.rodata</td>
+</tr>
+<tr>
+<td>.bss</td>
+<td>.text</td>
+</tr>
+<tr>
+<td>.got</td>
+<td>.int</td>
+</tr>
+<tr>
+<td>.plt</td>
+<td>ELF  Header</td>
+</tr>
+</tbody></table>
+<table>
+<thead>
+<tr>
+<th>Stack</th>
+<th>Heap</th>
+<th>For Kernel</th>
+<th>STACK</th>
+<th>HEAP</th>
+<th>DATA</th>
+<th>CODE</th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>用来管理函数调用的状态</td>
+<td>申请动态内存的调用</td>
+<td>操作系统代码</td>
+<td>栈段</td>
+<td>堆段</td>
+<td>数据段</td>
+<td>代码段</td>
+<td></td>
+</tr>
+</tbody></table>
+<p>vmmap：查看程序进程的内存空间</p>
+<p>数据从低地址向高地址写</p>
+<h2 id="（4）进程虚拟地址空间"><a href="#（4）进程虚拟地址空间" class="headerlink" title="（4）进程虚拟地址空间"></a>（4）进程虚拟地址空间</h2><p><img src="/2025/01/14/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%9F%BA%E7%A1%80/3.png" alt="3"></p>
+<p>地址以字节编码</p>
+<p>1Byte&#x3D;8bits</p>
+<p>常以16进制表示</p>
+<p>例：0x3c&#x3D;0011 1100</p>
+<p>虚拟内存用户空间每个进程一份</p>
+<p>虚拟内存内核空间所有进程共享一份</p>
+<p>虚拟内存mmap段中的动态链接库仅在物理内存中装载一份</p>
 
     </div>
 
@@ -226,11 +340,11 @@
 
         
     <div class="post-nav">
-      <div class="post-nav-item"></div>
       <div class="post-nav-item">
-    <a href="/2025/01/14/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%9F%BA%E7%A1%80/" rel="next" title="二进制基础">
-      二进制基础 <i class="fa fa-chevron-right"></i>
+    <a href="/2024/12/26/hello-world/" rel="prev" title="Hello World">
+      <i class="fa fa-chevron-left"></i> Hello World
     </a></div>
+      <div class="post-nav-item"></div>
     </div>
       </footer>
     
@@ -289,7 +403,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Quick-Start"><span class="nav-number">1.</span> <span class="nav-text">Quick Start</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Create-a-new-post"><span class="nav-number">1.1.</span> <span class="nav-text">Create a new post</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Run-server"><span class="nav-number">1.2.</span> <span class="nav-text">Run server</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Generate-static-files"><span class="nav-number">1.3.</span> <span class="nav-text">Generate static files</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Deploy-to-remote-sites"><span class="nav-number">1.4.</span> <span class="nav-text">Deploy to remote sites</span></a></li></ol></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%B8%80%E3%80%81%E7%A8%8B%E5%BA%8F%E7%9A%84%E7%BC%96%E8%AF%91%E4%B8%8E%E9%93%BE%E6%8E%A5"><span class="nav-number">1.</span> <span class="nav-text">一、程序的编译与链接</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BA%8C%E3%80%81Linux%E4%B8%8B%E7%9A%84%E5%8F%AF%E6%89%A7%E8%A1%8C%E6%96%87%E4%BB%B6%E6%A0%BC%E5%BC%8F"><span class="nav-number">2.</span> <span class="nav-text">二、Linux下的可执行文件格式</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%EF%BC%881%EF%BC%89%E4%BB%80%E4%B9%88%E6%98%AF%E5%8F%AF%E6%89%A7%E8%A1%8C%E6%96%87%E4%BB%B6%EF%BC%9F"><span class="nav-number">2.1.</span> <span class="nav-text">（1）什么是可执行文件？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%EF%BC%882%EF%BC%89%E5%8F%AF%E6%89%A7%E8%A1%8C%E6%96%87%E4%BB%B6%E7%9A%84%E5%88%86%E7%B1%BB"><span class="nav-number">2.2.</span> <span class="nav-text">（2）可执行文件的分类</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%EF%BC%883%EF%BC%89%E7%A3%81%E7%9B%98%E4%B8%AD%E7%9A%84ELF%E4%B8%8E%E5%86%85%E5%AD%98%E4%B8%AD%E7%9A%84ELF"><span class="nav-number">2.3.</span> <span class="nav-text">（3）磁盘中的ELF与内存中的ELF</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%EF%BC%884%EF%BC%89%E8%BF%9B%E7%A8%8B%E8%99%9A%E6%8B%9F%E5%9C%B0%E5%9D%80%E7%A9%BA%E9%97%B4"><span class="nav-number">2.4.</span> <span class="nav-text">（4）进程虚拟地址空间</span></a></li></ol></li></ol></div>
       </div>
       <!--/noindex-->
 
