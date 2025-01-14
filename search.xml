@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<search>
+  <entry>
+    <title>Hello World</title>
+    <url>/2024/12/26/hello-world/</url>
+    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
+<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p>
+<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p>
+<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p>
+<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
+]]></content>
+  </entry>
+  <entry>
+    <title>二进制基础</title>
+    <url>/2025/01/14/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%9F%BA%E7%A1%80/</url>
+    <content><![CDATA[<h1 id="一、程序的编译与链接"><a href="#一、程序的编译与链接" class="headerlink" title="一、程序的编译与链接"></a>一、程序的编译与链接</h1><p>从C源代码到可执行文件的生成过程 </p>
+<p>编译： 由C语言代码生成汇编代码 </p>
+<p>汇编： 由汇编代码生成机器码 </p>
+<p>链接 ：将多个机器码的目标文件链接成一个可执行文件</p>
+<p><img src="/2025/01/14/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%9F%BA%E7%A1%80/1.png" alt="1"></p>
+<p>​                                           C语言→汇编语言→机器码</p>
+<h1 id="二、Linux下的可执行文件格式"><a href="#二、Linux下的可执行文件格式" class="headerlink" title="二、Linux下的可执行文件格式"></a>二、Linux下的可执行文件格式</h1><h2 id="（1）什么是可执行文件？"><a href="#（1）什么是可执行文件？" class="headerlink" title="（1）什么是可执行文件？"></a>（1）什么是可执行文件？</h2><p>广义：文件中的数据是可执行文件 </p>
+<p>例：</p>
+<table>
+<thead>
+<tr>
+<th>.out</th>
+<th>.exe</th>
+<th>.sh</th>
+<th>.py</th>
+</tr>
+</thead>
+</table>
+<p>狭义：文件中的数据是机器码的文件 </p>
+<p>例：</p>
+<table>
+<thead>
+<tr>
+<th>.out</th>
+<th>.exe</th>
+<th>.dll</th>
+<th>.so</th>
+</tr>
+</thead>
+</table>
+<p>.out .exe .dl .so </p>
+<h2 id="（2）可执行文件的分类"><a href="#（2）可执行文件的分类" class="headerlink" title="（2）可执行文件的分类"></a>（2）可执行文件的分类</h2><p>Windows：PE</p>
+<table>
+<thead>
+<tr>
+<th>可执行程序</th>
+<th>动态链接库</th>
+<th>静态链接库</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>.exe</td>
+<td>.dll</td>
+<td>.lib</td>
+</tr>
+</tbody></table>
+<p>Linux：ELF</p>
+<table>
+<thead>
+<tr>
+<th>可执行程序</th>
+<th>动态链接库</th>
+<th>静态链接库</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>.out</td>
+<td>.so</td>
+<td>.a</td>
+</tr>
+</tbody></table>
+<h2 id="（3）磁盘中的ELF与内存中的ELF"><a href="#（3）磁盘中的ELF与内存中的ELF" class="headerlink" title="（3）磁盘中的ELF与内存中的ELF"></a>（3）磁盘中的ELF与内存中的ELF</h2><p>磁盘中的储存方式：节</p>
+<p>内存中的储存方式：段</p>
+<p><img src="/2025/01/14/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%9F%BA%E7%A1%80/2.png" alt="2"></p>
+<table>
+<thead>
+<tr>
+<th>RW可写 Data段</th>
+<th>RX可读 Code段</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>.data</td>
+<td>.rodata</td>
+</tr>
+<tr>
+<td>.bss</td>
+<td>.text</td>
+</tr>
+<tr>
+<td>.got</td>
+<td>.int</td>
+</tr>
+<tr>
+<td>.plt</td>
+<td>ELF  Header</td>
+</tr>
+</tbody></table>
+<table>
+<thead>
+<tr>
+<th>Stack</th>
+<th>Heap</th>
+<th>For Kernel</th>
+<th>STACK</th>
+<th>HEAP</th>
+<th>DATA</th>
+<th>CODE</th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>用来管理函数调用的状态</td>
+<td>申请动态内存的调用</td>
+<td>操作系统代码</td>
+<td>栈段</td>
+<td>堆段</td>
+<td>数据段</td>
+<td>代码段</td>
+<td></td>
+</tr>
+</tbody></table>
+<p>vmmap：查看程序进程的内存空间</p>
+<p>数据从低地址向高地址写</p>
+<h2 id="（4）进程虚拟地址空间"><a href="#（4）进程虚拟地址空间" class="headerlink" title="（4）进程虚拟地址空间"></a>（4）进程虚拟地址空间</h2><p><img src="/2025/01/14/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%9F%BA%E7%A1%80/3.png" alt="3"></p>
+<p>地址以字节编码</p>
+<p>1Byte&#x3D;8bits</p>
+<p>常以16进制表示</p>
+<p>例：0x3c&#x3D;0011 1100</p>
+<p>虚拟内存用户空间每个进程一份</p>
+<p>虚拟内存内核空间所有进程共享一份</p>
+<p>虚拟内存mmap段中的动态链接库仅在物理内存中装载一份</p>
+]]></content>
+  </entry>
+</search>
