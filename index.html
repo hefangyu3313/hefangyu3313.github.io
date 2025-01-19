@@ -214,7 +214,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-01-19 00:07:34" itemprop="dateModified" datetime="2025-01-19T00:07:34+08:00">2025-01-19</time>
+                <time title="修改时间：2025-01-19 10:39:02" itemprop="dateModified" datetime="2025-01-19T10:39:02+08:00">2025-01-19</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -259,10 +259,10 @@
 <p><img src="/2025/01/18/ezlibc/image-20250118195529093.png" alt="image-20250118195529093"></p>
 <p><img src="/2025/01/18/ezlibc/image-20250118195650040.png" alt="image-20250118195650040"></p>
 <h2 id="（3）Canary绕过"><a href="#（3）Canary绕过" class="headerlink" title="（3）Canary绕过"></a>（3）Canary绕过</h2><p>我们知道在进行栈溢出时Canary的值已经改变，但函数退栈返回前程序会比对Canary的值，我们可以先把Canary泄露出来，进行栈溢出时候，再把Canary的值发送，这样Canary的值就不会改变</p>
-<h2 id="（4）Canary特点"><a href="#（4）Canary特点" class="headerlink" title="（4）Canary特点"></a>（4）Canary特点</h2><p>Canary所生成的随机数有一个非常重要的特点：随机数的第一个字节必然是 0x00。如此设计的主要目的是实现字符串截断，当我们进行泄露时遇到0x00直接就停止了，但是我们进行栈溢出时，可以多发送一个字节，使\x00被覆盖，这样我们就可以成功的将Canary泄露出来。</p>
-<h1 id="ret2libc"><a href="#ret2libc" class="headerlink" title="ret2libc"></a>ret2libc</h1><h2 id="（1）题目特点"><a href="#（1）题目特点" class="headerlink" title="（1）题目特点"></a>（1）题目特点</h2><p>进行栈溢出时，程序可能没有后门函数，可能既没有system函数，又没有”&#x2F;bin&#x2F;sh”字符串，我们就无法拿到shell，但是我们可以借助libc库其真实地址计算出来</p>
+<h2 id="（4）Canary特点"><a href="#（4）Canary特点" class="headerlink" title="（4）Canary特点"></a>（4）Canary特点</h2><p>Canary所生成的随机数有一个非常重要的特点：随机数的第一个字节必然是 0x00。如此设计的主要目的是实现字符串截断，当我们进行泄露时遇到0x00直接就停止了，但是我们进行栈溢出时，可以多发送一个字节，使\x00被覆盖，这样我们就可以成功的将Canary泄露出来</p>
+<h1 id="ret2libc"><a href="#ret2libc" class="headerlink" title="ret2libc"></a>ret2libc</h1><h2 id="（1）题目特点"><a href="#（1）题目特点" class="headerlink" title="（1）题目特点"></a>（1）题目特点</h2><p>进行栈溢出时，程序可能没有后门函数，可能既没有system函数，又没有”&#x2F;bin&#x2F;sh”字符串，我们就无法拿到shell，但是我们可以借助libc库将其真实地址计算出来</p>
 <h2 id="（2）解题思路"><a href="#（2）解题思路" class="headerlink" title="（2）解题思路"></a>（2）解题思路</h2><p>我们知道<strong>函数的真实地址  &#x3D;  基地址  +  偏移地址</strong> ，如果我们知道每次程序运行的基地址，以及每个函数的偏移地址，我们就可以计算出函数的真实地址</p>
-<p>基地址：每次运行程序加载函数时，函数的基地址都会发生改变，</p>
+<p>基地址：每次运行程序加载函数时，函数的基地址都会发生改变</p>
 <p>偏移地址：libc库中存放的就是这些函数的偏移地址，函数真实地址的后三位不会变化，根据其最后三位借助，可以判断出libc库的版本</p>
 <p>查询libc版本网站：<a target="_blank" rel="noopener" href="https://libc.blukat.me/">libc database search</a></p>
 <p>使用方法：输入函数名称和真实地址</p>
