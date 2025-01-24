@@ -17,7 +17,7 @@
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"default"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
   <meta name="description" content="一、栈的介绍（1）栈的基本概念栈（Stack）：一种后进先出（LIFO）的数据结构，用于存储程序运行时的临时数据 栈帧（Stack Frame）：每个函数调用时，栈会分配一个栈帧，用于存储函数的局部变量、参数、返回地址等信息 栈指针（SP）：指向当前栈顶的指针，随着压栈（Push）和出栈（Pop）操作动态变化 基指针（BP）：指向当前栈帧的底部，用于在栈帧中定位局部变量和参数 指令指针（IP&amp;#x">
@@ -278,7 +278,7 @@
 <h1 id="二、-函数调用过程"><a href="#二、-函数调用过程" class="headerlink" title="二、 函数调用过程"></a>二、 函数调用过程</h1><h2 id="（1）参数传递的步骤"><a href="#（1）参数传递的步骤" class="headerlink" title="（1）参数传递的步骤"></a>（1）参数传递的步骤</h2><p><strong>1.逆序压栈</strong></p>
 <p>调用函数（caller）按照<strong>逆序</strong>将参数依次压入栈中。这意味着最后一个参数先被压入栈，第一个参数最后被压入栈。</p>
 <p>例如，调用函数 <code>callee(1，2，3)</code> 时，参数的压栈顺序是3，2，1</p>
-<figure class="highlight abnf"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs abnf">push <span class="hljs-number">3</span>    <span class="hljs-comment">; 第三个参数，实际是第一个一个压入栈</span><br>push <span class="hljs-number">2</span>    <span class="hljs-comment">; 第二个参数</span><br>push <span class="hljs-number">1</span>    <span class="hljs-comment">; 第一个参数，实际是最后一个压入栈</span><br></code></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">push 3    ; 第三个参数，实际是第一个一个压入栈</span><br><span class="line">push 2    ; 第二个参数</span><br><span class="line">push 1    ; 第一个参数，实际是最后一个压入栈</span><br></pre></td></tr></table></figure>
 
 <p><strong>2.参数保存</strong></p>
 <p>这些参数被压入栈后，会保存在调用函数（caller）的栈帧中。此时，调用函数的栈帧仍然包含这些参数</p>
@@ -287,12 +287,12 @@
 <h2 id="（2）栈帧的切换"><a href="#（2）栈帧的切换" class="headerlink" title="（2）栈帧的切换"></a>（2）栈帧的切换</h2><p>当被调用函数（callee）开始执行时，栈帧的切换过程如下：</p>
 <p><strong>1.保存返回地址</strong></p>
 <p>当调用函数使用 <code>call</code> 指令调用被调用函数时，<code>call</code> 指令会自动将调用函数的下一条指令的地址（即返回地址）压入栈中</p>
-<figure class="highlight llvm"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs llvm"><span class="hljs-keyword">call</span> callee  <span class="hljs-comment">; 调用 callee 函数</span><br></code></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">call callee  ; 调用 callee 函数</span><br></pre></td></tr></table></figure>
 
 <p><strong>2.创建被调用函数的栈帧</strong></p>
 <p>被调用函数（callee）会创建自己的栈帧，包括保存的寄存器值（也就是调用函数的基地址）、局部变量等</p>
 <p>被调用函数会从栈中读取参数，并在自己的栈帧中使用这些参数</p>
-<figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs x86asm"><span class="hljs-keyword">push</span> <span class="hljs-built_in">ebp</span>       <span class="hljs-comment">; 保存调用者的基地址</span><br><span class="hljs-keyword">mov</span> <span class="hljs-built_in">ebp</span>, <span class="hljs-built_in">esp</span>   <span class="hljs-comment">; 建立被调用者的基地址</span><br></code></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">push ebp       ; 保存调用者的基地址</span><br><span class="line">mov ebp, esp   ; 建立被调用者的基地址</span><br></pre></td></tr></table></figure>
 
 <p><strong>3.执行被调用函数</strong></p>
 <p>被调用函数执行其逻辑，操作局部变量和参数</p>
@@ -300,7 +300,7 @@
 <p><strong>4.清理栈帧</strong></p>
 <p>被调用函数执行完毕后，清理自己的栈帧，释放局部变量占用的空间</p>
 <p>返回地址从栈中弹出，存储到指令指针（IP&#x2F;EIP&#x2F;RIP）中，程序跳回调用函数的下一条指令</p>
-<figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs x86asm"><span class="hljs-keyword">mov</span> <span class="hljs-built_in">esp</span>, <span class="hljs-built_in">ebp</span>  <span class="hljs-comment">; 恢复栈指针到调用者调用时的位置，释放局部变量占用的空间</span><br><span class="hljs-keyword">pop</span> <span class="hljs-built_in">ebp</span>       <span class="hljs-comment">; 恢复调用者的基地址    </span><br><span class="hljs-keyword">ret</span>           <span class="hljs-comment">; 从栈中弹出返回地址并跳转到该地址</span><br></code></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">mov esp, ebp  ; 恢复栈指针到调用者调用时的位置，释放局部变量占用的空间</span><br><span class="line">pop ebp       ; 恢复调用者的基地址    </span><br><span class="line">ret           ; 从栈中弹出返回地址并跳转到该地址</span><br></pre></td></tr></table></figure>
 
 <p><strong>注：</strong></p>
 <p><strong>x86</strong></p>
@@ -404,7 +404,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">6</span>
+          <span class="site-state-item-count">7</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -454,13 +454,13 @@
       <i class="fa fa-chart-area"></i>
     </span>
       <span class="post-meta-item-text">站点总字数：</span>
-    <span title="站点总字数">12k</span>
+    <span title="站点总字数">14k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
       <span class="post-meta-item-text">站点阅读时长 &asymp;</span>
-    <span title="站点阅读时长">11 分钟</span>
+    <span title="站点阅读时长">12 分钟</span>
 </div>
   <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
   </div>

