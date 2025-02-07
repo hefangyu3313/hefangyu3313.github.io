@@ -14,10 +14,11 @@
 
 
 <link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"default"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"default"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
   <meta property="og:type" content="website">
@@ -183,6 +184,383 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/01/14/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%9F%BA%E7%A1%80/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="和方煜">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="小小pwn">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2025/01/14/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%9F%BA%E7%A1%80/" class="post-title-link" itemprop="url">二进制基础</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2025-01-14 15:16:45" itemprop="dateCreated datePublished" datetime="2025-01-14T15:16:45+08:00">2025-01-14</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2025-02-07 13:32:51" itemprop="dateModified" datetime="2025-02-07T13:32:51+08:00">2025-02-07</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AC%AC%E4%B8%80%E5%91%A8/" itemprop="url" rel="index"><span itemprop="name">第一周</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>2k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>2 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="一、程序的编译与链接"><a href="#一、程序的编译与链接" class="headerlink" title="一、程序的编译与链接"></a>一、程序的编译与链接</h1><p>从C源代码到可执行文件的生成过程 </p>
+<p>编译： 由C语言代码生成汇编代码 </p>
+<p>汇编： 由汇编代码生成机器码 </p>
+<p>链接 ：将多个机器码的目标文件链接成一个可执行文件</p>
+<p><img src="/2025/01/14/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%9F%BA%E7%A1%80/1.png" alt="1"></p>
+<p>​                                           C语言→汇编语言→机器码</p>
+<h1 id="二、Linux下的可执行文件格式"><a href="#二、Linux下的可执行文件格式" class="headerlink" title="二、Linux下的可执行文件格式"></a>二、Linux下的可执行文件格式</h1><h2 id="（1）什么是可执行文件？"><a href="#（1）什么是可执行文件？" class="headerlink" title="（1）什么是可执行文件？"></a>（1）什么是可执行文件？</h2><p>广义：文件中的数据是可执行文件 </p>
+<p>例：</p>
+<table>
+<thead>
+<tr>
+<th>.out</th>
+<th>.exe</th>
+<th>.sh</th>
+<th>.py</th>
+</tr>
+</thead>
+</table>
+<p>狭义：文件中的数据是机器码的文件 </p>
+<p>例：</p>
+<table>
+<thead>
+<tr>
+<th>.out</th>
+<th>.exe</th>
+<th>.dll</th>
+<th>.so</th>
+</tr>
+</thead>
+</table>
+<p>.out .exe .dl .so </p>
+<h2 id="（2）可执行文件的分类"><a href="#（2）可执行文件的分类" class="headerlink" title="（2）可执行文件的分类"></a>（2）可执行文件的分类</h2><p>Windows：PE</p>
+<table>
+<thead>
+<tr>
+<th>可执行程序</th>
+<th>动态链接库</th>
+<th>静态链接库</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>.exe</td>
+<td>.dll</td>
+<td>.lib</td>
+</tr>
+</tbody></table>
+<p>Linux：ELF</p>
+<table>
+<thead>
+<tr>
+<th>可执行程序</th>
+<th>动态链接库</th>
+<th>静态链接库</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>.out</td>
+<td>.so</td>
+<td>.a</td>
+</tr>
+</tbody></table>
+<h2 id="（3）磁盘中的ELF与内存中的ELF"><a href="#（3）磁盘中的ELF与内存中的ELF" class="headerlink" title="（3）磁盘中的ELF与内存中的ELF"></a>（3）磁盘中的ELF与内存中的ELF</h2><p>磁盘中的储存方式：节</p>
+<p>内存中的储存方式：段</p>
+<p><img src="/2025/01/14/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%9F%BA%E7%A1%80/2.png" alt="2"></p>
+<table>
+<thead>
+<tr>
+<th>RW可写 Data段</th>
+<th>RX可读 Code段</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>.data</td>
+<td>.rodata</td>
+</tr>
+<tr>
+<td>.bss</td>
+<td>.text</td>
+</tr>
+<tr>
+<td>.got</td>
+<td>.int</td>
+</tr>
+<tr>
+<td>.plt</td>
+<td>ELF  Header</td>
+</tr>
+</tbody></table>
+<table>
+<thead>
+<tr>
+<th>Stack</th>
+<th>Heap</th>
+<th>For Kernel</th>
+<th>STACK</th>
+<th>HEAP</th>
+<th>DATA</th>
+<th>CODE</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>用来管理函数调用的状态</td>
+<td>申请动态内存的调用</td>
+<td>操作系统代码</td>
+<td>栈段</td>
+<td>堆段</td>
+<td>数据段</td>
+<td>代码段</td>
+</tr>
+</tbody></table>
+<p>vmmap：查看程序进程的内存空间</p>
+<p>注：数据从低地址向高地址写 Heap：是从低往高增长 Stack：是从高往低增长（栈的增长方向是相反的）</p>
+<h1 id="三、进程虚拟地址空间"><a href="#三、进程虚拟地址空间" class="headerlink" title="三、进程虚拟地址空间"></a>三、进程虚拟地址空间</h1><p><img src="/2025/01/14/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%9F%BA%E7%A1%80/3.png" alt="3"></p>
+<h2 id="（1）地址编码"><a href="#（1）地址编码" class="headerlink" title="（1）地址编码"></a>（1）地址编码</h2><p>地址以字节编码，1Byte&#x3D;8bits，常以16进制表示</p>
+<h2 id="（2）二进制与十六进制转换"><a href="#（2）二进制与十六进制转换" class="headerlink" title="（2）二进制与十六进制转换"></a>（2）二进制与十六进制转换</h2><p>1.二进制转十六进制</p>
+<p>例：11010110</p>
+<p>从右往左每四位一组1101 0110，将二进制转换为十进制在对应为十六进制</p>
+<p>1101&#x3D;1×2³ + 1×2² + 0×2¹ + 1×2⁰ &#x3D;13&#x3D;D</p>
+<p>0110&#x3D;0×2³ + 1×2² + 1×2¹ + 0×2⁰&#x3D;6</p>
+<p>11010110&#x3D;D6</p>
+<p>2.十六进制转二进制</p>
+<p>例：2AF</p>
+<p>将每个十六进制的数转换为对应的四位二进制数，在组合起来</p>
+<p>2&#x3D;0010</p>
+<p>A&#x3D;10&#x3D;1010</p>
+<p>F&#x3D;15&#x3D;1111</p>
+<p>2AF&#x3D;0010 1010 1111</p>
+<h2 id="（3）虚拟内存"><a href="#（3）虚拟内存" class="headerlink" title="（3）虚拟内存"></a>（3）虚拟内存</h2><p>虚拟内存用户空间每个进程一份</p>
+<p>虚拟内存内核空间所有进程共享一份</p>
+<p>虚拟内存mmap段中的动态链接库仅在物理内存中装载一份</p>
+<h2 id="（4）段（segment）与节（section）"><a href="#（4）段（segment）与节（section）" class="headerlink" title="（4）段（segment）与节（section）"></a>（4）段（segment）与节（section）</h2><table>
+<thead>
+<tr>
+<th>代码段（Text segment）</th>
+<th>数据段（Data segment）</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>包含了代码与只读数据</td>
+<td>包含了可读可写数据</td>
+</tr>
+<tr>
+<td><strong>.text 节</strong></td>
+<td>.data 节</td>
+</tr>
+<tr>
+<td>.rodata 节</td>
+<td>.dynamic 节</td>
+</tr>
+<tr>
+<td>.hash 节</td>
+<td>.got 节</td>
+</tr>
+<tr>
+<td>.dynsym 节</td>
+<td><strong>.got.plt</strong> 节（保存plt节解析出的函数的实际地址）</td>
+</tr>
+<tr>
+<td>.dynstr 节</td>
+<td><strong>.bss 节</strong> （只占用内存的空间不占用磁盘的空间）</td>
+</tr>
+<tr>
+<td><strong>.plt</strong> 节（解析动态链接函数的实际地址）</td>
+<td></td>
+</tr>
+<tr>
+<td>.rel.got 节</td>
+<td></td>
+</tr>
+</tbody></table>
+<h2 id="（5）程序数据是如何在内存中组织的"><a href="#（5）程序数据是如何在内存中组织的" class="headerlink" title="（5）程序数据是如何在内存中组织的"></a>（5）程序数据是如何在内存中组织的</h2><p><img src="/2025/01/14/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%9F%BA%E7%A1%80/image-20250114203349946.png" alt="image-20250114203349946"></p>
+<p>Data段：放已经初始化的全局变量</p>
+<p>Bss段：放未初始化的全局变量</p>
+<p>Text段：除了防止代码还放只读数据（.rodata）</p>
+<p>Heap段：动态存储区</p>
+<p>Stack段：存放局部变量（随着函数执行完被丢弃）</p>
+<p>注：x,y是形参，当main函数调用sum函数时才会被用到，只有参数传递的时候才会被使用</p>
+<p>32位架构：当main函数调用sum函数时，在创建sum函数的栈帧之前，将x和y的值压栈</p>
+<p>64位架构：x,y不会放在虚拟内存中，而是放在寄存器中</p>
+<h2 id="（6）大端序与小端序"><a href="#（6）大端序与小端序" class="headerlink" title="（6）大端序与小端序"></a>（6）大端序与小端序</h2><p><img src="/2025/01/14/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%9F%BA%E7%A1%80/image-20250114212210896.png" alt="image-20250114212210896"></p>
+<p>小端序：低地址存放数据低位、高地址存放数据高位（大部分）</p>
+<p><img src="/2025/01/14/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%9F%BA%E7%A1%80/image-20250118180248328.png" alt="image-20250118180248328"></p>
+<p>大端序：低地址存放数据高位、高地址存放数据低位（小部分）</p>
+<p>注：在C语言中0x00是字符串的结束符，大部分情况数据高位都为0，大端序低地址存放高位数据，数据是从低地址向高地址写，当进行溢出时，从低地址写入遇到0x00就直接结束了，所以小端序比大端序更好利用。</p>
+<h1 id="四、程序的装载与进程的执行"><a href="#四、程序的装载与进程的执行" class="headerlink" title="四、程序的装载与进程的执行"></a>四、程序的装载与进程的执行</h1><h2 id="（1）进程的执行过程"><a href="#（1）进程的执行过程" class="headerlink" title="（1）进程的执行过程"></a>（1）进程的执行过程</h2><p><img src="/2025/01/14/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%9F%BA%E7%A1%80/image-20250114213905165.png" alt="image-20250114213905165"></p>
+<p>PC寄存器（Register）：存放当前执行指令的地址（process count）</p>
+<p>x86 eip x64 rip </p>
+<h2 id="（2）寄存器"><a href="#（2）寄存器" class="headerlink" title="（2）寄存器"></a>（2）寄存器</h2><p><img src="/2025/01/14/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%9F%BA%E7%A1%80/image-20250114215650510.png" alt="image-20250114215650510"></p>
+<p>amd64位寄存器结构</p>
+<table>
+<thead>
+<tr>
+<th>名称</th>
+<th>大小</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>rax</td>
+<td>8Bytes</td>
+</tr>
+<tr>
+<td>eax</td>
+<td>4Bytes</td>
+</tr>
+<tr>
+<td>ax</td>
+<td>2Bytes</td>
+</tr>
+<tr>
+<td>ah</td>
+<td>1Bytes</td>
+</tr>
+<tr>
+<td>al</td>
+<td>1Bytes</td>
+</tr>
+</tbody></table>
+<p>部分寄存器的功能</p>
+<table>
+<thead>
+<tr>
+<th>名称</th>
+<th>功能</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>RSP</td>
+<td>存放当前栈帧的栈顶地址</td>
+</tr>
+<tr>
+<td>RBP</td>
+<td>存放当前栈帧的栈底地址</td>
+</tr>
+<tr>
+<td>RAX</td>
+<td>通用寄存器存放函数返回值</td>
+</tr>
+<tr>
+<td>RIP</td>
+<td>存放当前执行的指令的地址</td>
+</tr>
+</tbody></table>
+<h2 id="（3）静态链接的程序的执行过程"><a href="#（3）静态链接的程序的执行过程" class="headerlink" title="（3）静态链接的程序的执行过程"></a>（3）静态链接的程序的执行过程</h2><p><img src="/2025/01/14/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%9F%BA%E7%A1%80/image-20250114215750912.png" alt="image-20250114215750912"></p>
+<p>user mode：用户代码          hernel mode：操作系统代码</p>
+<h2 id="（4）动态链接的程序的执行过程"><a href="#（4）动态链接的程序的执行过程" class="headerlink" title="（4）动态链接的程序的执行过程"></a>（4）动态链接的程序的执行过程</h2><p><img src="/2025/01/14/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%9F%BA%E7%A1%80/image-20250114231359629.png" alt="image-20250114231359629"></p>
+<h1 id="五、x86-amd64汇编简述"><a href="#五、x86-amd64汇编简述" class="headerlink" title="五、x86&amp;amd64汇编简述"></a>五、x86&amp;amd64汇编简述</h1><h2 id="（1）常用汇编指令"><a href="#（1）常用汇编指令" class="headerlink" title="（1）常用汇编指令"></a>（1）常用汇编指令</h2><table>
+<thead>
+<tr>
+<th>MOV</th>
+<th>LEA</th>
+<th>PUSH</th>
+<th>POP</th>
+<th>LEAVE</th>
+<th>RET</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>把源操作数传送给目标</td>
+<td>把源操作数的有效地址送给指定的寄存器</td>
+<td>把目标值压栈，同时SP指针-1字长</td>
+<td>将栈顶的值弹出至目的存储位置，同时SP指针+1字长</td>
+<td>在函数返回时，恢复父函数栈帧的指令</td>
+<td>在函数返回时，控制程序执行流返回父函数的指令</td>
+</tr>
+</tbody></table>
+<h2 id="（2）两种汇编格式"><a href="#（2）两种汇编格式" class="headerlink" title="（2）两种汇编格式"></a>（2）两种汇编格式</h2><table>
+<thead>
+<tr>
+<th>intel</th>
+<th>AT&amp;T</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>mov eax, 8</td>
+<td>movl $8, %eax</td>
+</tr>
+<tr>
+<td>mov ebx, 0ffffh</td>
+<td>movl $0xffff, %ebx</td>
+</tr>
+<tr>
+<td>int 80h</td>
+<td>int $80</td>
+</tr>
+<tr>
+<td>mov eax, [ecx]</td>
+<td>movl (%ecx), %eax</td>
+</tr>
+</tbody></table>
+<p><img src="/2025/01/14/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%9F%BA%E7%A1%80/image-20250207132728553.png" alt="image-20250207132728553"></p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="http://example.com/2024/12/26/hello-world/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -332,14 +710,14 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">11</span>
+          <span class="site-state-item-count">12</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-count">4</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
@@ -382,13 +760,13 @@
       <i class="fa fa-chart-area"></i>
     </span>
       <span class="post-meta-item-text">站点总字数：</span>
-    <span title="站点总字数">30k</span>
+    <span title="站点总字数">42k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
       <span class="post-meta-item-text">站点阅读时长 &asymp;</span>
-    <span title="站点阅读时长">27 分钟</span>
+    <span title="站点阅读时长">39 分钟</span>
 </div>
   <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
   </div>
@@ -431,6 +809,8 @@
 
   
   <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
   <script src="/lib/velocity/velocity.min.js"></script>
   <script src="/lib/velocity/velocity.ui.min.js"></script>
 
@@ -445,6 +825,9 @@
 <script src="/js/next-boot.js"></script>
 
 
+
+// 在最后添加
+<script src="/js/code-unfold.js"></script>
 
 
   
